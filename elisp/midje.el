@@ -34,4 +34,8 @@
       (midje-send-test-request :ns "ns" namespace)
     (message "No namespace to be tested in the current context")))
 
+(defun midje-re-run-failed-tests ()
+  (interactive)
+  (midje-send-test-request :retest))
+
 (provide 'midje)
