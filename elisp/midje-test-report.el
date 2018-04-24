@@ -12,7 +12,7 @@
 (defun midje-render-test-summary (summary)
   (nrepl-dbind-response summary (error fact fail ns pass test skip)
     (insert (format "Tested %d namespaces\n" ns))
-    (insert (format "Ran %d assertions in %d facts\n" test 0))
+    (insert (format "Ran %d assertions from %d facts\n" test fact))
     (unless (zerop fail)
       (cider-insert (format "%d failures" fail) 'cider-test-failure-face t))
     (unless (zerop error)
