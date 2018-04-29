@@ -77,4 +77,4 @@
   (interactive)
   (emidje-send-test-request :retest))
 
-(provide 'midje)
+(provide 'emidje)
