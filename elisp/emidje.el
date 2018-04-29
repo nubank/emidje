@@ -3,7 +3,6 @@
 ;;; Code:
 
 (require 'cider)
-(require 'midje-test-report)
 
 (defface emidje-work-todo-face
   '((((class color) (background light))
@@ -15,6 +14,13 @@
   :package-version '(emidje . "0.1.0"))
 
 (defconst emidje-nrepl-version "0.1.0-SNAPSHOT")
+
+(defun emidje-inject-jack-in-dependencies ()
+  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,midje-nrepl-version) t))
+
+;;;###autoload
+(eval-after-load 'cider
+  '(emidje-inject-jack-in-dependencies))
 
 (defun emidje-render-test-summary (summary)
   (nrepl-dbind-response summary (error fact fail ns pass test skip)
@@ -46,13 +52,6 @@
       (cider-insert "Test Summary" 'bold t)
       (emidje-render-list-of-namespaces results)
       (emidje-render-test-summary summary))))
-
-(defun emidje-inject-jack-in-dependencies ()
-  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,midje-nrepl-version) t))
-
-;;;###autoload
-(eval-after-load 'cider
-  '(emidje-inject-jack-in-dependencies))
 
 (defvar emidje-supported-operations
   '((:ns . "midje-test-ns")
