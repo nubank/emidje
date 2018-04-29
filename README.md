@@ -1,3 +1,3 @@
-# midje.el
+# Emidje
 
-`midje.el` provides support for running `midje` tests within `Emacs`.
+`Emidje` extends `Cider` to run `Midje` tests within `Emacs`.

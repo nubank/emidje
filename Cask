@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package-file "midje.el")
+(package-file "elisp/emidje.el")
 
 (development
  (depends-on "f")
