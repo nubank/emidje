@@ -22,6 +22,30 @@
 (eval-after-load 'cider
   '(emidje-inject-jack-in-dependencies))
 
+(defun emidje-render-one-test-result (result)
+  (print result))
+
+(defun emidje-count-non-passing-tests (results)
+  (seq-count (lambda (result)
+               (let* ((type (nrepl-dict-get result "type")))
+                 (and (not (equal type "error"))
+                      (not (equal type "fail"))))) results))
+
+(defun emidje-render-test-results (results-dict)
+  (cider-insert "Results" 'bold t "\n")
+  (nrepl-dict-map (lambda (ns results)
+                    (let* ((problems (emidje-count-non-passing-tests results)))
+                      (when (> problems 0)
+                        (insert (format "%s\n%d non-passing tests:\n\n"
+                                        (cider-propertize ns 'ns) problems))))
+                    (dolist (result results)
+                      (emidje-render-one-test-result result))
+                    ) results-dict))
+
+(defun emidje-render-list-of-namespaces (results)
+  (dolist (namespace (nrepl-dict-keys results))
+    (insert (cider-propertize namespace 'ns) "\n")))
+
 (defun emidje-render-test-summary (summary)
   (nrepl-dbind-response summary (error fact fail ns pass test skip)
     (insert (format "Tested %d namespaces\n" ns))
@@ -35,10 +59,6 @@
     (when (zerop (+ fail error))
       (cider-insert (format "%d passed" pass) 'cider-test-success-face t))))
 
-(defun emidje-render-list-of-namespaces (results)
-  (dolist (namespace (nrepl-dict-keys results))
-    (insert (cider-propertize namespace 'ns) "\n")))
-
 (defun emidje-get-test-report-buffer ()
   (or (get-buffer cider-test-report-buffer)
       (cider-popup-buffer cider-test-report-buffer
@@ -49,9 +69,11 @@
     (cider-test-report-mode)
     (let ((inhibit-read-only t))
       (erase-buffer)
-      (cider-insert "Test Summary" 'bold t)
+      (cider-insert "Test Summary" 'bold t "\n")
       (emidje-render-list-of-namespaces results)
-      (emidje-render-test-summary summary))))
+      (emidje-render-test-summary summary)
+      (emidje-render-test-results results)
+      (goto-char (point-min)))))
 
 (defvar emidje-supported-operations
   '((:ns . "midje-test-ns")
