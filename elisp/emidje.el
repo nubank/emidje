@@ -32,6 +32,7 @@
                            (insert-rectangle (thread-first s
                                                cider-font-lock-as-clojure
                                                (split-string "\n")))
+                           (insert "\n")
                            (beginning-of-line)))
       (cider-propertize-region (cider-intern-keys (cdr result))
         (let ((beg (point))
