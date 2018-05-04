@@ -22,18 +22,21 @@
 (eval-after-load 'cider
   '(emidje-inject-jack-in-dependencies))
 
+(defun emidje-insert-section (content)
+  (let* ((lines (if (stringp content)
+                    (split-string content "\n")
+                  (append content '("\n")))))
+    (thread-last lines
+      (seq-map                         #'cider-font-lock-as-clojure)
+      insert-rectangle)
+    (beginning-of-line)))
+
 (defun emidje-render-one-test-result (result)
   (nrepl-dbind-response result (context expected actual error message type)
     (cl-flet ((insert-label (s)
                             (cider-insert (format "%8s: " s) 'font-lock-comment-face))
               (insert-align-label (s)
-                                  (insert (format "%12s" s)))
-              (insert-rect (s)
-                           (insert-rectangle (thread-first s
-                                               cider-font-lock-as-clojure
-                                               (split-string "\n")))
-                           (insert "\n")
-                           (beginning-of-line)))
+                                  (insert (format "%12s" s))))
       (cider-propertize-region (cider-intern-keys (cdr result))
         (let ((beg (point))
               (type-face (cider-test-type-simple-face type))
@@ -41,24 +44,26 @@
           (cider-insert (capitalize type) type-face nil " in ")
           (dolist (text context)
             (cider-insert text 'font-lock-doc-face t))
+          (insert "\n")
           (when expected
             (insert-label "expected")
-            (insert-rect expected)
+            (emidje-insert-section expected)
             (insert "\n"))
           (when actual
             (insert-label "actual")
-            (insert-rect actual))
+            (emidje-insert-section actual)
+            (insert "\n"))
           (unless (seq-empty-p message)
-            (dolist (text message)
-              (cider-insert text 'font-lock-doc-string-face t)))
+            (insert-label "Message")
+            (emidje-insert-section message))
           (when error
             (insert-label "error")
             (insert-text-button error
                                 'follow-link t
                                 'action '(lambda (_button) (cider-test-stacktrace))
-                                'help-echo "View causes and stacktrace"))
-          (overlay-put (make-overlay beg (point)) 'font-lock-face bg))
-        (insert "\n\n")))))
+                                'help-echo "View causes and stacktrace")
+            (insert "\n\n"))
+          (overlay-put (make-overlay beg (point)) 'font-lock-face bg))))))
 
 (defun emidje-count-non-passing-tests (results)
   (seq-count (lambda (result)
