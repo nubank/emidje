@@ -13,6 +13,8 @@
   :group 'midje
   :package-version '(emidje . "0.1.0"))
 
+(defconst emidje-report-buffer "*emidje-test-report*")
+
 (defconst midje-nrepl-version "0.1.0-SNAPSHOT")
 
 (defun emidje-inject-jack-in-dependencies ()
@@ -109,12 +111,11 @@
 
 (defun emidje-get-test-report-buffer ()
   (or (get-buffer cider-test-report-buffer)
-      (cider-popup-buffer cider-test-report-buffer
-                          cider-auto-select-test-report-buffer)))
+      (cider-popup-buffer emidje-report-buffer t)))
 
 (defun emidje-render-test-report (results summary)
   (with-current-buffer (emidje-get-test-report-buffer)
-    (cider-test-report-mode)
+    (emidje-report-mode)
     (let ((inhibit-read-only t))
       (erase-buffer)
       (cider-insert "Test Summary" 'bold t "\n")
@@ -146,5 +147,44 @@
 (defun emidje-re-run-failed-tests ()
   (interactive)
   (emidje-send-test-request :retest))
+
+(defun emidje-jump-to-definition (&optional arg)
+  (interactive "p")
+  (let* ((file (get-text-property (point) 'file))
+         (line (or (get-text-property (point) 'line) 1))
+         (buffer (cider--find-buffer-for-file file))
+         (other-window nil))
+    (if buffer
+        (cider-jump-to buffer (cons line 1) other-window)
+      (error "No source location"))))
+
+(defvar emidje-report-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") #'emidje-jump-to-definition)
+    map))
+
+(defvar emidje-mode-map
+  (let ((map (define-prefix-command 'emidje-map)))
+    (define-key map (kbd "m-n") #'emidje-run-ns-tests)
+    (define-key map (kbd "m-r") #'emidje-re-run-failed-tests)
+    map))
+
+(define-derived-mode emidje-report-mode fundamental-mode "Test Report"
+  "Major mode for presenting Midje test results.
+
+\\{emidje-report-mode-map}"
+  (setq buffer-read-only t)
+  (when cider-special-mode-truncate-lines
+    (setq-local truncate-lines t))
+  (setq-local electric-indent-chars nil))
+
+(define-minor-mode emidje-mode
+  "Provides a set of keybindings for interacting with Midje tests.
+
+With a prefix argument ARG, enable emidje-mode if ARG
+is positive, and disable it otherwise.  If called from Lisp,
+enable the mode if ARG is omitted or nil."
+  :lighter "emidje"
+  :keymap emidje-mode-map)
 
 (provide 'emidje)
