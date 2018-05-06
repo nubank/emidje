@@ -68,7 +68,9 @@
         (let ((beg (point))
               (type-face (cider-test-type-simple-face type))
               (bg `(:background ,cider-test-items-background-color)))
-          (cider-insert (capitalize type) type-face nil " in ")
+          (if (equal type "skip")
+              (cider-insert "Work To Do " 'midje-work-todo-face nil)
+            (cider-insert (capitalize type) type-face nil " in "))
           (dolist (text context)
             (cider-insert text 'font-lock-doc-face t))
           (insert "\n")
@@ -95,8 +97,8 @@
 (defun emidje-count-non-passing-tests (results)
   (seq-count (lambda (result)
                (let* ((type (nrepl-dict-get result "type")))
-                 (and (not (equal type "error"))
-                      (not (equal type "fail"))))) results))
+                 (or (equal type "error")
+                     (equal type "fail")))) results))
 
 (defun emidje-get-displayable-results (results)
   (seq-filter (lambda (result)
@@ -168,6 +170,10 @@
   (if-let* ((namespace (cider-current-ns t)))
       (emidje-send-test-request :ns "ns" namespace)
     (message "No namespace to be tested in the current context")))
+
+(defun emidje-run-test-at-point ()
+  (interactive)
+  )
 
 (defun emidje-re-run-failed-tests ()
   (interactive)
