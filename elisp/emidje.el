@@ -22,7 +22,6 @@
 ;; For a full copy of the GNU General Public License
 ;; see <http://www.gnu.org/licenses/>.
 
-
 ;;; Commentary: Emidje is a Cider plugin that provides support to run Midje tests within Emacs.
 
 ;;; Code:
@@ -199,10 +198,12 @@
     (define-key map (kbd "RET") #'emidje-jump-to-definition)
     map))
 
-(defvar emidje-mode-map
-  (let ((map (define-prefix-command 'emidje-map)))
-    (define-key map (kbd "m-n") #'emidje-run-ns-tests)
-    (define-key map (kbd "m-r") #'emidje-re-run-failed-tests)
+(defvar emidje-commands-map
+  (let ((map (define-prefix-command 'emidje-commands-map)))
+    (define-key map (kbd "C-c C-j") 'emidje-commands-map)
+    (define-key map (kbd "n") #'emidje-run-ns-tests)
+    (define-key map (kbd "t") #'emidje-run-test-at-point)
+    (define-key map (kbd "r") #'emidje-re-run-failed-tests)
     map))
 
 (define-derived-mode emidje-report-mode special-mode "Test Report"
@@ -218,9 +219,14 @@
 
 With a prefix argument ARG, enable emidje-mode if ARG
 is positive, and disable it otherwise.  If called from Lisp,
-enable the mode if ARG is omitted or nil."
+enable the mode if ARG is omitted or nil.
+
+\\{emidje-commands-map}"
   :lighter "emidje"
-  :keymap emidje-mode-map)
+  :keymap emidje-commands-map)
+
+(when (fboundp 'clojure-mode)
+  (add-hook 'clojure-mode-hook #'emidje-mode t))
 
 (provide 'emidje)
 
