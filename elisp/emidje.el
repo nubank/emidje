@@ -1,4 +1,29 @@
-;;; emidje.el --- Test result viewer for Midje (https://github.com/marick/Midje) -*- lexical-binding: t -*-
+;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
+
+;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
+;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
+;; Version: 0.1.0-snapshot
+;; Package-Requires: ((cider "0.17.0-snapshot"))
+;; Homepage: https://github.com/alan-ghelardi/emidje
+;; Keywords: cider, clojure, midje, test
+
+;; This file is not part of GNU Emacs
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; For a full copy of the GNU General Public License
+;; see <http://www.gnu.org/licenses/>.
+
+
+;;; Commentary: Emidje is a Cider plugin that provides support to run Midje tests within Emacs.
 
 ;;; Code:
 
@@ -188,3 +213,5 @@ enable the mode if ARG is omitted or nil."
   :keymap emidje-mode-map)
 
 (provide 'emidje)
+
+;;; emidje.el ends here
