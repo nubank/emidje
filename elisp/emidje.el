@@ -183,9 +183,10 @@
   (interactive)
   (emidje-send-test-request :retest))
 
-(defun emidje-jump-to-definition (&optional arg)
+(defun emidje-jump-to-test-definition (&optional arg)
   (interactive "p")
-  (let* ((file (get-text-property (point) 'file))
+  (let* ((file (or (get-text-property (point) 'file)
+                   (user-error "Nothing to be visited here")))
          (line (or (get-text-property (point) 'line) 1))
          (buffer (cider--find-buffer-for-file file))
          (other-window nil))
@@ -195,7 +196,7 @@
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") #'emidje-jump-to-definition)
+    (define-key map (kbd "RET") #'emidje-jump-to-test-definition)
     map))
 
 (defvar emidje-commands-map
