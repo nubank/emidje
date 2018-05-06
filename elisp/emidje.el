@@ -194,11 +194,10 @@
     (define-key map (kbd "m-r") #'emidje-re-run-failed-tests)
     map))
 
-(define-derived-mode emidje-report-mode fundamental-mode "Test Report"
+(define-derived-mode emidje-report-mode special-mode "Test Report"
   "Major mode for presenting Midje test results.
 
 \\{emidje-report-mode-map}"
-  (setq buffer-read-only t)
   (when cider-special-mode-truncate-lines
     (setq-local truncate-lines t))
   (setq-local electric-indent-chars nil))
