@@ -173,7 +173,12 @@
 
 (defun emidje-run-test-at-point ()
   (interactive)
-  )
+  (let* ((ns (cider-current-ns t))
+         (sexp (cider-sexp-at-point))
+         (line-number (line-number-at-pos)))
+    (emidje-send-test-request :test-at-point "ns" ns
+                              "test-forms" sexp
+                              "line" line-number)))
 
 (defun emidje-re-run-failed-tests ()
   (interactive)
