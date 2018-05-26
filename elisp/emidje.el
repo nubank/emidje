@@ -48,6 +48,49 @@
 (eval-after-load 'cider
   '(emidje-inject-jack-in-dependencies))
 
+(defvar emidje-supported-operations
+  '((:ns . "midje-test-ns")
+    (:test-at-point . "midje-test")
+    (:retest . "midje-retest")
+    (:test-stacktrace . "midje-test-stacktrace")))
+
+(defun emidje-render-stacktrace (causes)
+  "Renders the Cider error buffer with the given causes."
+  (cider-stacktrace-render
+   (cider-popup-buffer cider-error-buffer
+                       cider-auto-select-error-buffer
+                       #'cider-stacktrace-mode)
+   causes))
+
+(defun emidje-send-request (operation-type params callback)
+  (let* ((op (cdr (assq operation-type emidje-supported-operations)))
+         (message (append `("op" ,op) params)))
+    (print message)
+    (cider-nrepl-send-request message
+                              callback)))
+
+(defun emidje-show-test-stacktrace-at (ns index)
+  "Shows the stacktrace for the error whose location within the report map is given by the ns and index."
+  (let (causes (list))
+    (emidje-send-request :test-stacktrace `("ns" ,ns
+                                            "index" ,index
+                                            "print-fn" "clojure.lang/println")
+                         (lambda (response)
+                           (nrepl-dbind-response response (class status)
+                             (cond (class  (setq causes (cons response causes)))
+                                   (status (when causes
+                                             (emidje-render-stacktrace (reverse causes))))))))))
+
+(defun emidje-show-test-stacktrace ()
+  "Shows the stacktrace for the erring test at point."
+  (interactive)
+  (let ((ns    (get-text-property (point) 'ns))
+        (index (get-text-property (point) 'index))
+        (error (get-text-property (point) 'error)))
+    (if (and error ns index)
+        (emidje-show-test-stacktrace-at ns index)
+      (message "No test error at point"))))
+
 (defun emidje-insert-section (content)
   (let* ((lines (if (stringp content)
                     (split-string content "\n")
@@ -88,7 +131,7 @@
             (insert-label "error")
             (insert-text-button error
                                 'follow-link t
-                                'action '(lambda (_button) (cider-test-stacktrace))
+                                'action '(lambda (_button) (emidje-show-test-stacktrace))
                                 'help-echo "View causes and stacktrace")
             (insert "\n\n"))
           (overlay-put (make-overlay beg (point)) 'font-lock-face bg))))))
@@ -150,19 +193,13 @@
       (emidje-render-test-results results)
       (goto-char (point-min)))))
 
-(defvar emidje-supported-operations
-  '((:ns . "midje-test-ns")
-    (:test-at-point . "midje-test")
-    (:retest . "midje-retest")))
-
 (defun emidje-send-test-request (operation-type &rest params)
-  (let* ((op (cdr (assq operation-type emidje-supported-operations)))
-         (message (apply 'list (append `("op" ,op) params))))
-    (cider-nrepl-send-request message
-                              (lambda (response)
-                                (nrepl-dbind-response response (results summary)
-                                  (when results
-                                    (emidje-render-test-report results summary)))))))
+  "Sends the test message asynchronously and shows the test report when applicable."
+  (emidje-send-request operation-type (apply 'list params)
+                       (lambda (response)
+                         (nrepl-dbind-response response (results summary)
+                           (when results
+                             (emidje-render-test-report results summary))))))
 
 (defun emidje-run-ns-tests ()
   (interactive)
