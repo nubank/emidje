@@ -199,7 +199,15 @@
 
 (defun emidje-echo-summary (summary)
   (nrepl-dbind-response summary (error fact fail ns pass test skip)
-    ))
+    (if (zerop test)
+        (message (propertize "No tests were run. Is that what you wanted?"
+                             'face 'cider-test-error-face))
+      (let ((face (cond
+                   ((not (zerop error)) 'cider-test-error-face)
+                   ((not (zerop fail)) 'cider-test-failure-face)
+                   'cider-test-success-face)))
+        (message (propertize
+                  (format "Tested %d namespace(s). Ran %d assertions from %d facts. %d failures, %d errors, %d to do." ns test fact fail error skip) 'face face))))))
 
 (defun emidje-maybe-get-test-description (sexp)
   (let ((description (thread-last (or sexp "()")
