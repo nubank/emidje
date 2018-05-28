@@ -75,10 +75,10 @@
 
 (defun emidje-show-test-stacktrace-at (ns index)
   "Shows the stacktrace for the error whose location within the report map is given by the ns and index."
-  (let (causes (list))
-    (emidje-send-request :test-stacktrace `("ns" ,ns
-                                            "index" ,index
-                                            "print-fn" "clojure.lang/println")
+  (let ((causes (list)))
+    (emidje-send-request :test-stacktrace `(ns ,ns
+                                               index ,index
+                                               print-fn "clojure.lang/println")
                          (lambda (response)
                            (nrepl-dbind-response response (class status)
                              (cond (class  (setq causes (cons response causes)))
