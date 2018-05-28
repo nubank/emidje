@@ -226,10 +226,10 @@
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
 
-(defun emidje-send-test-request (operation-type &rest params)
+(defun emidje-send-test-request (operation-type &optional message)
   "Sends the test message asynchronously and shows the test report when applicable."
-  (emidje-echo-running-tests operation-type params)
-  (emidje-send-request operation-type (apply 'list params)
+  (emidje-echo-running-tests operation-type message)
+  (emidje-send-request operation-type message
                        (lambda (response)
                          (nrepl-dbind-response response (results summary)
                            (when (and results summary)
@@ -239,7 +239,7 @@
 (defun emidje-run-ns-tests ()
   (interactive)
   (if-let* ((namespace (cider-current-ns t)))
-      (emidje-send-test-request :ns 'ns namespace)
+      (emidje-send-test-request :ns `(ns ,namespace))
     (message "No namespace to be tested in the current context")))
 
 (defun emidje-run-test-at-point ()
@@ -247,9 +247,9 @@
   (let* ((ns (cider-current-ns t))
          (sexp (cider-sexp-at-point))
          (line-number (line-number-at-pos)))
-    (emidje-send-test-request :test-at-point 'ns ns
-                              'test-forms sexp
-                              'line line-number)))
+    (emidje-send-test-request :test-at-point `(ns ,ns
+                                                  test-forms ,sexp
+                                                  line ,line-number))))
 
 (defun emidje-re-run-failed-tests ()
   (interactive)
