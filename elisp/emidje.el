@@ -226,6 +226,7 @@
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
 
+
 (defun emidje-send-test-request (operation-type &optional message)
   "Sends the test message asynchronously and shows the test report when applicable."
   (emidje-echo-running-tests operation-type message)
@@ -265,6 +266,18 @@
     (if buffer
         (cider-jump-to buffer (cons line 1) other-window)
       (error "No source location"))))
+
+(defun emidje-format-tabular-sync (sexpr)
+  (thread-first
+      (cider-nrepl-send-sync-request `("op" "midje-format-tabular"
+                                       "code" ,sexpr))
+    (nrepl-dict-get "code")))
+
+(defun emidje-format-tabular ()
+  (interactive)
+  (save-excursion
+    (mark-sexp)
+    (cider--format-region (region-beginning) (region-end) #'emidje-format-tabular-sync)))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
