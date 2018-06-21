@@ -17,10 +17,10 @@
 
        (tabular (fact "about basic arithmetic operations"
                       (?operation ?a ?b) => ?result)
-                ?operation ?a ?b ?result
-                + 2 5 10
-                + 10 4 14
-                - 100 25 75
-                * 123 69 8487
-                / 15 8 15/8
-                / 4284 126 34))
+                ?operation   ?a  ?b ?result
+                +    2   5      10
+                +   10   4      14
+                -  100  25      75
+                *  123  69    8487
+                /   15   8    15/8
+                / 4284 126      34 ))
