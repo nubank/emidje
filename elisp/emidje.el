@@ -267,17 +267,17 @@
         (cider-jump-to buffer (cons line 1) other-window)
       (error "No source location"))))
 
-(defun emidje-format-tabular-sync (sexpr)
+(defun emidje-send-format-request (sexpr)
   (thread-first
       (cider-nrepl-send-sync-request `("op" "midje-format-tabular"
                                        "code" ,sexpr))
-    (nrepl-dict-get "code")))
+    (nrepl-dict-get "formatted-code")))
 
 (defun emidje-format-tabular ()
   (interactive)
   (save-excursion
     (mark-sexp)
-    (cider--format-region (region-beginning) (region-end) #'emidje-format-tabular-sync)))
+    (cider--format-region (region-beginning) (region-end) #'emidje-send-format-request)))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
