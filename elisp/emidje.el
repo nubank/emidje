@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'cider)
+(require 'cider-format)
 
 (defface emidje-work-todo-face
   '((((class color) (background light))
@@ -49,7 +50,9 @@
   '(emidje-inject-jack-in-dependencies))
 
 (defvar emidje-supported-operations
-  '((:ns . "midje-test-ns")
+  '((:version . "midje-nrepl-version")
+    (:format-tabular . "midje-format-tabular")
+    (:ns . "midje-test-ns")
     (:test-at-point . "midje-test")
     (:retest . "midje-retest")
     (:test-stacktrace . "midje-test-stacktrace")))
@@ -62,7 +65,21 @@
                        #'cider-stacktrace-mode)
    causes))
 
-(defun emidje-send-request (operation-type params callback)
+(defun emidje-handle-error-response (response)
+  (nrepl-dbind-response response (error-message exception status)
+    (cond
+     (error-message (user-error error-message)
+                    (exception (emidje-render-stacktrace exception))
+                    (t (user-error "midje-nrepl returned the following status: %st" (mapconcat #'identity status ", ")))))))
+
+(defun emidje-handle-nrepl-response (handler-function response)
+  (nrepl-dbind-response response (status)
+    (if (seq-contains status "error")
+        (emidje-handle-error-response response)
+      (apply handler-function (list response)))))
+
+(defun emidje-send-request (operation-type params &optional callback)
+  (cider-ensure-connected)
   (let* ((op (cdr (assq operation-type emidje-supported-operations)))
          (message (thread-last params
                     (seq-map (lambda (value)
@@ -70,8 +87,10 @@
                                    (symbol-name value)
                                  value)))
                     (append `("op" ,op)))))
-    (cider-nrepl-send-request message
-                              callback)))
+    (if callback
+        (cider-nrepl-send-request message (apply-partially #'emidje-handle-nrepl-response callback))
+      (thread-last (cider-nrepl-send-sync-request message)
+        (emidje-handle-nrepl-response #'identity)))))
 
 (defun emidje-show-test-stacktrace-at (ns index)
   "Shows the stacktrace for the error whose location within the report map is given by the ns and index."
@@ -226,7 +245,6 @@
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
 
-
 (defun emidje-send-test-request (operation-type &optional message)
   "Sends the test message asynchronously and shows the test report when applicable."
   (emidje-echo-running-tests operation-type message)
@@ -269,8 +287,7 @@
 
 (defun emidje-send-format-request (sexpr)
   (thread-first
-      (cider-nrepl-send-sync-request `("op" "midje-format-tabular"
-                                       "code" ,sexpr))
+      (emidje-send-request :format-tabular `(code ,sexpr))
     (nrepl-dict-get "formatted-code")))
 
 (defun emidje-format-tabular ()
@@ -285,11 +302,11 @@
     map))
 
 (defvar emidje-commands-map
-  (let ((map (define-prefix-command 'emidje-commands-map)))
-    (define-key map (kbd "C-c C-j") 'emidje-commands-map)
-    (define-key map (kbd "n") #'emidje-run-ns-tests)
-    (define-key map (kbd "t") #'emidje-run-test-at-point)
-    (define-key map (kbd "r") #'emidje-re-run-failed-tests)
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-j f") #'emidje-format-tabular)
+    (define-key map (kbd "C-c C-j n") #'emidje-run-ns-tests)
+    (define-key map (kbd "C-c C-j t") #'emidje-run-test-at-point)
+    (define-key map (kbd "C-c C-j r") #'emidje-re-run-failed-tests)
     map))
 
 (define-derived-mode emidje-report-mode special-mode "Test Report"
