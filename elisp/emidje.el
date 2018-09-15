@@ -1,4 +1,4 @@
-;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
+ ;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
@@ -28,13 +28,42 @@
 
 (require 'cider)
 
+(defface emidje-failure-face
+  '((((class color) (background light))
+     :background "orange red")
+    (((class color) (background dark))
+     :background "firebrick"))
+  "Face for failed tests."
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
+(defface emidje-error-face
+  '((((class color) (background light))
+     :background "orange1")
+    (((class color) (background dark))
+     :background "orange4"))
+  "Face for erring tests."
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
+(defface emidje-success-face
+  '((((class color) (background light))
+     :foreground "black"
+     :background "green")
+    (((class color) (background dark))
+     :foreground "black"
+     :background "green"))
+  "Face for passing tests."
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
 (defface emidje-work-todo-face
   '((((class color) (background light))
      :background "yellow1")
     (((class color) (background dark))
      :background "yellow4"))
   "Face for future facts."
-  :group 'midje
+  :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
 (defconst emidje-report-buffer "*midje-test-report*")
@@ -133,7 +162,7 @@
               (type-face (cider-test-type-simple-face type))
               (bg `(:background ,cider-test-items-background-color)))
           (if (equal type "skip")
-              (cider-insert "Work To Do " 'midje-work-todo-face nil)
+              (cider-insert "Work To Do " 'emidje-work-todo-face nil)
             (cider-insert (capitalize type) type-face nil " in "))
           (dolist (text context)
             (cider-insert text 'font-lock-doc-face t))
@@ -191,13 +220,13 @@
     (insert (format "Tested %d namespaces\n" ns))
     (insert (format "Ran %d assertions from %d facts\n" test fact))
     (unless (zerop fail)
-      (cider-insert (format "%d failures" fail) 'cider-test-failure-face t))
+      (cider-insert (format "%d failures" fail) 'emidje-failure-face t))
     (unless (zerop error)
-      (cider-insert (format "%d errors" error) 'cider-test-error-face t))
+      (cider-insert (format "%d errors" error) 'emidje-error-face t))
     (unless (zerop skip)
-      (cider-insert (format "%d to do" skip) 'midje-work-todo-face t))
+      (cider-insert (format "%d to do" skip) 'emidje-work-todo-face t))
     (when (zerop (+ fail error))
-      (cider-insert (format "%d passed" pass) 'cider-test-success-face t))
+      (cider-insert (format "%d passed" pass) 'emidje-success-face t))
     (insert "\n")))
 
 (defun emidje-get-test-report-buffer ()
@@ -233,11 +262,11 @@ If the tests were successful and there's a test report buffer rendered, kills it
   (nrepl-dbind-response summary (error fact fail ns pass test skip)
     (if (zerop test)
         (message (propertize "No tests were run. Is that what you wanted?"
-                             'face 'cider-test-error-face))
+                             'face 'emidje-error-face))
       (let ((face (cond
-                   ((not (zerop error)) 'cider-test-error-face)
-                   ((not (zerop fail)) 'cider-test-failure-face)
-                   (t 'cider-test-success-face))))
+                   ((not (zerop error)) 'emidje-error-face)
+                   ((not (zerop fail)) 'emidje-failure-face)
+                   (t 'emidje-success-face))))
         (message (propertize
                   (format "Tested %d namespace(s). Ran %d assertions from %d facts. %d failures, %d errors, %d to do." ns test fact fail error skip) 'face face))))))
 
