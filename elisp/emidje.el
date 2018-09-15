@@ -27,7 +27,6 @@
 ;;; Code:
 
 (require 'cider)
-(require 'cider-format)
 
 (defface emidje-work-todo-face
   '((((class color) (background light))
@@ -205,16 +204,21 @@
   (or (get-buffer cider-test-report-buffer)
       (cider-popup-buffer emidje-report-buffer t)))
 
+(defun emidje-tests-passed-p (summary)
+  (nrepl-dbind-response summary (fail error)
+    (zerop (+ fail error))))
+
 (defun emidje-render-test-report (results summary)
-  (with-current-buffer (emidje-get-test-report-buffer)
-    (emidje-report-mode)
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (cider-insert "Test Summary" 'bold t "\n")
-      (emidje-render-list-of-namespaces results)
-      (emidje-render-test-summary summary)
-      (emidje-render-test-results results)
-      (goto-char (point-min)))))
+  (when (not (emidje-tests-passed-p summary))
+    (with-current-buffer (emidje-get-test-report-buffer)
+      (emidje-report-mode)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (cider-insert "Test Summary" 'bold t "\n")
+        (emidje-render-list-of-namespaces results)
+        (emidje-render-test-summary summary)
+        (emidje-render-test-results results)
+        (goto-char (point-min))))))
 
 (defun emidje-echo-summary (summary)
   (nrepl-dbind-response summary (error fact fail ns pass test skip)
@@ -224,7 +228,7 @@
       (let ((face (cond
                    ((not (zerop error)) 'cider-test-error-face)
                    ((not (zerop fail)) 'cider-test-failure-face)
-                   'cider-test-success-face)))
+                   (t 'cider-test-success-face))))
         (message (propertize
                   (format "Tested %d namespace(s). Ran %d assertions from %d facts. %d failures, %d errors, %d to do." ns test fact fail error skip) 'face face))))))
 
