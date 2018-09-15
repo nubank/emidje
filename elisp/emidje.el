@@ -37,7 +37,7 @@
   :group 'midje
   :package-version '(emidje . "0.1.0"))
 
-(defconst emidje-report-buffer "*emidje-test-report*")
+(defconst emidje-report-buffer "*midje-test-report*")
 
 (defconst midje-nrepl-version "0.1.0-SNAPSHOT")
 
@@ -201,15 +201,24 @@
     (insert "\n")))
 
 (defun emidje-get-test-report-buffer ()
-  (or (get-buffer cider-test-report-buffer)
+  (or (get-buffer emidje-report-buffer)
       (cider-popup-buffer emidje-report-buffer t)))
 
+(defun emidje-kill-test-report-buffer ()
+  "Kills the test report buffer if it exists."
+  (when-let ((buffer (get-buffer emidje-report-buffer)))
+    (kill-buffer buffer)))
+
 (defun emidje-tests-passed-p (summary)
+  "Returns t if all tests passed."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
 (defun emidje-render-test-report (results summary)
-  (when (not (emidje-tests-passed-p summary))
+  "Renders the test report if there are erring and/or failing tests.
+If the tests were successful and there's a test report buffer rendered, kills it."
+  (if (emidje-tests-passed-p summary)
+      (emidje-kill-test-report-buffer)
     (with-current-buffer (emidje-get-test-report-buffer)
       (emidje-report-mode)
       (let ((inhibit-read-only t))
