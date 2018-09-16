@@ -66,9 +66,21 @@
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
+(defcustom emidje-infer-test-ns-function 'emidje-default-infer-test-ns-function
+  "Function to infer the test namespace"
+  :type 'symbol
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
 (defconst emidje-report-buffer "*midje-test-report*")
 
 (defconst midje-nrepl-version "0.1.0-SNAPSHOT")
+
+(defun emidje-default-infer-test-ns-function (current-ns)
+  (let ((suffix "-test"))
+    (if (string-suffix-p suffix current-ns)
+        current-ns
+      (concat current-ns suffix))))
 
 (defun emidje-inject-jack-in-dependencies ()
   (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,midje-nrepl-version) t))
@@ -297,11 +309,16 @@ If the tests were successful and there's a test report buffer rendered, kills it
                              (emidje-echo-summary summary)
                              (emidje-render-test-report results summary))))))
 
+(defun emidje-namespace-to-be-tested ()
+  (let ((current-ns (cider-current-ns t)))
+    (if (string-equal current-ns "user")
+        (user-error "No namespace to be tested in the current context")
+      (funcall emidje-infer-test-ns-function current-ns))))
+
 (defun emidje-run-ns-tests ()
   (interactive)
-  (if-let* ((namespace (cider-current-ns t)))
-      (emidje-send-test-request :ns `(ns ,namespace))
-    (message "No namespace to be tested in the current context")))
+  (let ((namespace (emidje-namespace-to-be-tested)))
+    (emidje-send-test-request :ns `(ns ,namespace))))
 
 (defun emidje-run-test-at-point ()
   (interactive)
