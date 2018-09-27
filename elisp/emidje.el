@@ -92,6 +92,7 @@
 (defvar emidje-supported-operations
   '((:version . "midje-nrepl-version")
     (:format-tabular . "midje-format-tabular")
+    (:project . "midje-test-all")
     (:ns . "midje-test-ns")
     (:test-at-point . "midje-test")
     (:retest . "midje-retest")
@@ -295,6 +296,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
   (let* ((ns (plist-get args 'ns))
          (test-description (emidje-maybe-get-test-description (plist-get args 'test-forms))))
     (pcase op-type
+      (:project (message "Running tests in all project namespaces..."))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
@@ -308,6 +310,10 @@ If the tests were successful and there's a test report buffer rendered, kills it
                            (when (and results summary)
                              (emidje-echo-summary summary)
                              (emidje-render-test-report results summary))))))
+
+(defun emidje-run-all-tests ()
+  (interactive)
+  (emidje-send-test-request :project))
 
 (defun emidje-namespace-to-be-tested ()
   (let ((current-ns (cider-current-ns t)))
@@ -363,6 +369,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
 (defvar emidje-commands-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-j f") #'emidje-format-tabular)
+    (define-key map (kbd "C-c C-j p") #'emidje-run-all-tests)
     (define-key map (kbd "C-c C-j n") #'emidje-run-ns-tests)
     (define-key map (kbd "C-c C-j t") #'emidje-run-test-at-point)
     (define-key map (kbd "C-c C-j r") #'emidje-re-run-failed-tests)
