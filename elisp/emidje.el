@@ -72,22 +72,24 @@
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
-(defconst emidje-report-buffer "*midje-test-report*")
-
-(defconst midje-nrepl-version "0.1.0-SNAPSHOT")
-
 (defun emidje-default-infer-test-ns-function (current-ns)
   (let ((suffix "-test"))
     (if (string-suffix-p suffix current-ns)
         current-ns
       (concat current-ns suffix))))
 
-(defun emidje-inject-jack-in-dependencies ()
-  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,midje-nrepl-version) t))
+(defcustom emidje-load-facts-on-eval nil
+  "When set to nil (the default value), Midje facts won't be loaded on operations that cause the evaluation of Clojure forms like eval and load-file"
+  :type 'boolean
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
 
-;;;###autoload
-(eval-after-load 'cider
-  '(emidje-inject-jack-in-dependencies))
+(defconst emidje-evaluation-operations (list "eval" "load-file")
+  "List of nREPL operations that cause the evaluation of Clojure forms.")
+
+(defconst emidje-report-buffer "*midje-test-report*")
+
+(defconst midje-nrepl-version "0.1.0-SNAPSHOT")
 
 (defvar emidje-supported-operations
   '((:version . "midje-nrepl-version")
@@ -97,6 +99,13 @@
     (:test-at-point . "midje-test")
     (:retest . "midje-retest")
     (:test-stacktrace . "midje-test-stacktrace")))
+
+(defun emidje-inject-jack-in-dependencies ()
+  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,midje-nrepl-version) t))
+
+;;;###autoload
+(eval-after-load 'cider
+  '(emidje-inject-jack-in-dependencies))
 
 (defun emidje-render-stacktrace (causes)
   "Renders the Cider error buffer with the given causes."
@@ -360,6 +369,27 @@ If the tests were successful and there's a test report buffer rendered, kills it
   (save-excursion
     (mark-sexp)
     (cider--format-region (region-beginning) (region-end) #'emidje-send-format-request)))
+
+(defun emidje-instrumented-nrepl-send-request (original-function request &rest args)
+  "Instruments nrepl-send-request and nrepl-send-sync-request functions by appending the parameter load-tests? to the request when applicable"
+  (let* ((op (thread-last request
+               (seq-drop-while (lambda (candidate)
+                                 (not (equal candidate "op"))))
+               cdr
+               car))
+         (request (if (and emidje-load-facts-on-eval (seq-contains emidje-evaluation-operations op))
+                      (append request `("load-tests?" "true"))
+                    request)))
+    (apply original-function request args)))
+
+;; Adivice functions
+(advice-add'nrepl-send-request :around #'emidje-instrumented-nrepl-send-request)
+(advice-add 'nrepl-send-sync-request :around #'emidje-instrumented-nrepl-send-request)
+
+(defun emidje-toggle-load-facts-on-eval ()
+  "Toggles the value of emidje-load-facts-on-eval"
+  (interactive)
+  (setq emidje-load-facts-on-eval (not emidje-load-facts-on-eval)))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
