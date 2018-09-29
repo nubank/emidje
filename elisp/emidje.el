@@ -1,28 +1,15 @@
- ;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
+;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
-;; Version: 0.1.0-snapshot
-;; Package-Requires: ((cider "0.17.0-snapshot"))
+;; Version: 0.1.0-SNAPSHOT
+;; Package-Requires: ((cider "0.17.0"))
 ;; Homepage: https://github.com/alan-ghelardi/emidje
-;; Keywords: cider, clojure, midje, test
+;; Keywords: Cider, Clojure, tests
 
-;; This file is not part of GNU Emacs
+;;; Commentary:
 
-;; This file is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; For a full copy of the GNU General Public License
-;; see <http://www.gnu.org/licenses/>.
-
-;;; Commentary: Emidje is a Cider plugin that provides support to run Midje tests within Emacs.
+;; Emidje is a Cider plugin that provides support to run Midje tests within Emacs.
 
 ;;; Code:
 
@@ -89,8 +76,6 @@
 
 (defconst emidje-report-buffer "*midje-test-report*")
 
-(defconst midje-nrepl-version "0.1.0-SNAPSHOT")
-
 (defvar emidje-supported-operations
   '((:version . "midje-nrepl-version")
     (:format-tabular . "midje-format-tabular")
@@ -99,13 +84,6 @@
     (:test-at-point . "midje-test")
     (:retest . "midje-retest")
     (:test-stacktrace . "midje-test-stacktrace")))
-
-(defun emidje-inject-jack-in-dependencies ()
-  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,midje-nrepl-version) t))
-
-;;;###autoload
-(eval-after-load 'cider
-  '(emidje-inject-jack-in-dependencies))
 
 (defun emidje-render-stacktrace (causes)
   "Renders the Cider error buffer with the given causes."
@@ -128,10 +106,10 @@
         (emidje-handle-error-response response)
       (apply handler-function (list response)))))
 
-(defun emidje-send-request (operation-type params &optional callback)
+(defun emidje-send-request (operation-type &optional params callback)
   (cider-ensure-connected)
   (let* ((op (cdr (assq operation-type emidje-supported-operations)))
-         (message (thread-last params
+         (message (thread-last (or params ())
                     (seq-map (lambda (value)
                                (if (symbolp value)
                                    (symbol-name value)
@@ -141,6 +119,39 @@
         (cider-nrepl-send-request message (apply-partially #'emidje-handle-nrepl-response callback))
       (thread-last (cider-nrepl-send-sync-request message)
         (emidje-handle-nrepl-response #'identity)))))
+
+(defun emidje-package-version ()
+  "Returns the Emidje's current version"
+  (when (fboundp 'emidje-mode)
+    (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.*\\)$")
+          (version (pkg-info-version-info 'emidje)))
+      (if (not (string-match version-regex version))
+          version
+        (concat (match-string 1 version) "-" (upcase (match-string 2 version)))))))
+
+(defun emidje-check-midje-nrepl-version ()
+  "Checks whether midje-nrepl is available on the project's classpath and its version matches Emidje's version.
+Emits warning messages on the REPL buffer when applicable"
+  (let ((emidje-version (emidje-package-version))
+        (midje-nrepl-version (nrepl-dict-get-in (emidje-send-request :version) `("midje-nrepl" "version-string"))))
+    (unless midje-nrepl-version
+      (cider-repl-emit-interactive-stderr
+       "WARNING: midje-nrepl isn't in your classpath; Emidje keybindings won't work.
+ You can either start this REPL via cider-jack-in or add midje-nrepl to your profile.clj dependencies"))
+    (unless (string-equal emidje-version midje-nrepl-version)
+      (cider-repl-emit-interactive-stderr
+       (format "WARNING: Emidje's version (%s) and midje-nrepl's version (%s) are out of sync; things might break.
+ Please, consider updating the midje-nrepl version in your profile.clj to the version %s or start the REPL via cider-jack-in"
+               emidje-version midje-nrepl-version emidje-version)))))
+
+(defun emidje-inject-jack-in-dependencies ()
+  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t))
+
+;;;###autoload
+(eval-after-load 'cider
+  '(emidje-inject-jack-in-dependencies))
+
+(add-hook 'cider-connected-hook #'emidje-check-midje-nrepl-version)
 
 (defun emidje-show-test-stacktrace-at (ns index)
   "Shows the stacktrace for the error whose location within the report map is given by the ns and index."
