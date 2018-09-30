@@ -5,7 +5,7 @@
 ;; Version: 0.1.0-SNAPSHOT
 ;; Package-Requires: ((cider "0.17.0"))
 ;; Homepage: https://github.com/alan-ghelardi/emidje
-;; Keywords: Cider, Clojure, tests
+;; Keywords: Cider, Clojure, Midje, tests
 
 ;;; Commentary:
 
