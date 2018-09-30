@@ -53,6 +53,12 @@
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
+(defcustom emidje-load-facts-on-eval nil
+  "When set to nil (the default value), Midje facts won't be loaded on operations that cause the evaluation of Clojure forms like eval and load-file"
+  :type 'boolean
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
 (defcustom emidje-infer-test-ns-function 'emidje-default-infer-test-ns-function
   "Function to infer the test namespace"
   :type 'symbol
@@ -65,8 +71,8 @@
         current-ns
       (concat current-ns suffix))))
 
-(defcustom emidje-load-facts-on-eval nil
-  "When set to nil (the default value), Midje facts won't be loaded on operations that cause the evaluation of Clojure forms like eval and load-file"
+(defcustom emidje-suppress-middleware-warnings nil
+  "When set to t, no middleware warnings are shown on the REPL."
   :type 'boolean
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
@@ -121,28 +127,34 @@
         (emidje-handle-nrepl-response #'identity)))))
 
 (defun emidje-package-version ()
-  "Returns the Emidje's current version"
-  (when (fboundp 'emidje-mode)
-    (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.*\\)$")
-          (version (pkg-info-version-info 'emidje)))
-      (if (not (string-match version-regex version))
-          version
-        (concat (match-string 1 version) "-" (upcase (match-string 2 version)))))))
+  "Gets Emidje's current version from the package header."
+  (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.*\\)$")
+        (version (pkg-info-version-info 'emidje)))
+    (if (not (string-match version-regex version))
+        version
+      (concat (match-string 1 version) "-" (upcase (match-string 2 version))))))
+
+(defun emidje-show-warning-on-repl (message &rest args)
+  "If emidje-suppress-middleware-warnings isn't set to t, shows the message on the Cider's REPL buffer."
+  (unless emidje-suppress-middleware-warnings
+    (cider-repl-emit-interactive-stderr
+     (apply #'format (concat "WARNING: " message
+                             "\nYou can mute this warning by changing the variable emidje-suppress-middleware-warnings to t.")
+            args))))
 
 (defun emidje-check-midje-nrepl-version ()
   "Checks whether midje-nrepl is available on the project's classpath and its version matches Emidje's version.
-Emits warning messages on the REPL buffer when applicable"
+Shows warning messages on Cider's REPL when applicable."
   (let ((emidje-version (emidje-package-version))
         (midje-nrepl-version (nrepl-dict-get-in (emidje-send-request :version) `("midje-nrepl" "version-string"))))
-    (unless midje-nrepl-version
-      (cider-repl-emit-interactive-stderr
-       "WARNING: midje-nrepl isn't in your classpath; Emidje keybindings won't work.
- You can either start this REPL via cider-jack-in or add midje-nrepl to your profile.clj dependencies"))
-    (unless (string-equal emidje-version midje-nrepl-version)
-      (cider-repl-emit-interactive-stderr
-       (format "WARNING: Emidje's version (%s) and midje-nrepl's version (%s) are out of sync; things might break.
- Please, consider updating the midje-nrepl version in your profile.clj to the version %s or start the REPL via cider-jack-in"
-               emidje-version midje-nrepl-version emidje-version)))))
+    (cond
+     ((not midje-nrepl-version)
+      (emidje-show-warning-on-repl "midje-nrepl isn't in your classpath; Emidje keybindings won't work.
+ You can either start this REPL via cider-jack-in or add midje-nrepl to your profile.clj dependencies."))
+     ((not (string-equal emidje-version midje-nrepl-version))
+      (emidje-show-warning-on-repl "Emidje and midje-nrepl are out of sync (things will break).
+Their versions are %s and %s, respectively.
+Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
 (defun emidje-inject-jack-in-dependencies ()
   (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t))
