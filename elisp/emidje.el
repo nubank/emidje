@@ -152,11 +152,14 @@ Shows warning messages on Cider's REPL when applicable."
       (emidje-show-warning-on-repl "midje-nrepl isn't in your classpath; Emidje keybindings won't work.
  You can either start this REPL via cider-jack-in or add midje-nrepl to your profile.clj dependencies."))
      ((not (string-equal emidje-version midje-nrepl-version))
-      (emidje-show-warning-on-repl "Emidje and midje-nrepl are out of sync (things will break).
+      (emidje-show-warning-on-repl "Emidje and midje-nrepl are out of sync. Things will break!
 Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
 (defun emidje-inject-jack-in-dependencies ()
+  "Adds midje-nrepl to the Cider's list of Lein plugins.
+The midje-nrepl's version is inferred by calling emidje-package-version.
+Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-nrepl's version will be in sync."
   (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t))
 
 ;;;###autoload
