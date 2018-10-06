@@ -192,6 +192,8 @@ Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-n
       (message "No test error at point"))))
 
 (defun emidje-insert-section (content)
+  "Inserts the content of expected, actual and checker message sections in the current buffer's position.
+Treats ansi colors appropriately."
   (let* ((begin (point))
          (lines (if (stringp content)
                     (split-string content "\n")
@@ -199,8 +201,8 @@ Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-n
     (thread-last lines
       (seq-map                         #'cider-font-lock-as-clojure)
       insert-rectangle)
-    (beginning-of-line)
-    (ansi-color-apply-on-region begin (point))))
+    (ansi-color-apply-on-region begin (point))
+    (beginning-of-line)))
 
 (defun emidje-render-one-test-result (result)
   (nrepl-dbind-response result (context expected actual error message type)
