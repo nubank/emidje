@@ -323,18 +323,17 @@ If the tests were successful and there's a test report buffer rendered, kills it
         (message (propertize
                   (format "Tested %d namespace(s). Ran %d assertions from %d facts. %d failures, %d errors, %d to do." ns test fact fail error skip) 'face face))))))
 
-(defun emidje-maybe-get-test-description (sexp)
-  (let ((description (thread-last (or sexp "()")
-                       read-from-string
-                       car
-                       (nth 1))))
-    (if (stringp description)
-        (format "\"%s\" " description)
-      "")))
+(defun emidje-read-test-description-at-point ()
+  (save-excursion (down-list)
+                  (forward-sexp 2)
+                  (let ((possible-description (sexp-at-point)))
+                    (if (stringp possible-description)
+                        (format "\"%s\" " possible-description)
+                      ""))))
 
 (defun emidje-echo-running-tests (op-type args)
   (let* ((ns (plist-get args 'ns))
-         (test-description (emidje-maybe-get-test-description (plist-get args 'test-forms))))
+         (test-description (emidje-read-test-description-at-point)))
     (pcase op-type
       (:project (message "Running tests in all project namespaces..."))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
