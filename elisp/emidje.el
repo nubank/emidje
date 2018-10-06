@@ -13,6 +13,7 @@
 
 ;;; Code:
 
+(require 'ansi-color)
 (require 'cider)
 
 (defface emidje-failure-face
@@ -191,13 +192,15 @@ Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-n
       (message "No test error at point"))))
 
 (defun emidje-insert-section (content)
-  (let* ((lines (if (stringp content)
+  (let* ((begin (point))
+         (lines (if (stringp content)
                     (split-string content "\n")
                   (append content '("\n")))))
     (thread-last lines
       (seq-map                         #'cider-font-lock-as-clojure)
       insert-rectangle)
-    (beginning-of-line)))
+    (beginning-of-line)
+    (ansi-color-apply-on-region begin (point))))
 
 (defun emidje-render-one-test-result (result)
   (nrepl-dbind-response result (context expected actual error message type)

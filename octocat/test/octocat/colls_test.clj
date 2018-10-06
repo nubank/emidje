@@ -18,4 +18,3 @@
 
         (fact "the leftmost doesn't have the same elements as the rightmost"
               [1 2 3] => (match (m/in-any-order [3 2 4])))))
--
