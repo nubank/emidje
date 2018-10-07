@@ -161,7 +161,8 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
   "Adds midje-nrepl to the Cider's list of Lein plugins.
 The midje-nrepl's version is inferred by calling emidje-package-version.
 Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-nrepl's version will be in sync."
-  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t))
+  (when (boundp 'cider-jack-in-lein-plugins)
+    (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t)))
 
 ;;;###autoload
 (eval-after-load 'cider
