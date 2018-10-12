@@ -13,6 +13,7 @@
 
 ;;; Code:
 
+(require 'ansi-color)
 (require 'cider)
 
 (defface emidje-failure-face
@@ -160,7 +161,8 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
   "Adds midje-nrepl to the Cider's list of Lein plugins.
 The midje-nrepl's version is inferred by calling emidje-package-version.
 Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-nrepl's version will be in sync."
-  (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t))
+  (when (boundp 'cider-jack-in-lein-plugins)
+    (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t)))
 
 ;;;###autoload
 (eval-after-load 'cider
@@ -191,12 +193,16 @@ Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-n
       (message "No test error at point"))))
 
 (defun emidje-insert-section (content)
-  (let* ((lines (if (stringp content)
+  "Inserts the content of expected, actual and checker message sections in the current buffer's position.
+Treats ansi colors appropriately."
+  (let* ((begin (point))
+         (lines (if (stringp content)
                     (split-string content "\n")
                   (append content '("\n")))))
     (thread-last lines
       (seq-map                         #'cider-font-lock-as-clojure)
       insert-rectangle)
+    (ansi-color-apply-on-region begin (point))
     (beginning-of-line)))
 
 (defun emidje-render-one-test-result (result)
@@ -318,18 +324,17 @@ If the tests were successful and there's a test report buffer rendered, kills it
         (message (propertize
                   (format "Tested %d namespace(s). Ran %d assertions from %d facts. %d failures, %d errors, %d to do." ns test fact fail error skip) 'face face))))))
 
-(defun emidje-maybe-get-test-description (sexp)
-  (let ((description (thread-last (or sexp "()")
-                       read-from-string
-                       car
-                       (nth 1))))
-    (if (stringp description)
-        (format "\"%s\" " description)
-      "")))
+(defun emidje-read-test-description-at-point ()
+  (save-excursion (down-list)
+                  (forward-sexp 2)
+                  (let ((possible-description (sexp-at-point)))
+                    (if (stringp possible-description)
+                        (format "\"%s\" " possible-description)
+                      ""))))
 
 (defun emidje-echo-running-tests (op-type args)
   (let* ((ns (plist-get args 'ns))
-         (test-description (emidje-maybe-get-test-description (plist-get args 'test-forms))))
+         (test-description (emidje-read-test-description-at-point)))
     (pcase op-type
       (:project (message "Running tests in all project namespaces..."))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
