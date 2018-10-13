@@ -372,10 +372,10 @@ If the tests were successful and there's a test report buffer rendered, kills it
          (sexp (cider-sexp-at-point))
          (line-number (line-number-at-pos)))
     (emidje-send-test-request :test-at-point `(ns ,ns
-                                                  test-forms ,sexp
+                                                  source ,sexp
                                                   line ,line-number))))
 
-(defun emidje-re-run-failed-tests ()
+(defun emidje-re-run-non-passing-tests ()
   (interactive)
   (emidje-send-test-request :retest))
 
@@ -433,7 +433,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
     (define-key map (kbd "C-c C-j p") #'emidje-run-all-tests)
     (define-key map (kbd "C-c C-j n") #'emidje-run-ns-tests)
     (define-key map (kbd "C-c C-j t") #'emidje-run-test-at-point)
-    (define-key map (kbd "C-c C-j r") #'emidje-re-run-failed-tests)
+    (define-key map (kbd "C-c C-j r") #'emidje-re-run-non-passing-tests)
     map))
 
 (define-derived-mode emidje-report-mode special-mode "Test Report"
