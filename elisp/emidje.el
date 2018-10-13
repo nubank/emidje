@@ -212,7 +212,7 @@ Treats ansi colors appropriately."
               (insert-align-label (s)
                                   (insert (format "%12s" s))))
       (cider-propertize-region (cider-intern-keys (cdr result))
-        (let ((beg (point))
+        (let ((begin (point))
               (type-face (cider-test-type-simple-face type))
               (bg `(:background ,cider-test-items-background-color)))
           (if (equal type "skip")
@@ -230,7 +230,7 @@ Treats ansi colors appropriately."
             (emidje-insert-section actual)
             (insert "\n"))
           (unless (seq-empty-p message)
-            (insert-label "Message")
+            (insert-label "Checker said about the reason")
             (emidje-insert-section message))
           (when error
             (insert-label "error")
@@ -239,7 +239,7 @@ Treats ansi colors appropriately."
                                 'action '(lambda (_button) (emidje-show-test-stacktrace))
                                 'help-echo "View causes and stacktrace")
             (insert "\n\n"))
-          (overlay-put (make-overlay beg (point)) 'font-lock-face bg))))))
+          (overlay-put (make-overlay begin (point)) 'font-lock-face bg))))))
 
 (defun emidje-count-non-passing-tests (results)
   (seq-count (lambda (result)
@@ -270,15 +270,15 @@ Treats ansi colors appropriately."
     (insert "\n")))
 
 (defun emidje-render-test-summary (summary)
-  (nrepl-dbind-response summary (error fact fail ns pass test skip)
-    (insert (format "Tested %d namespaces\n" ns))
-    (insert (format "Ran %d assertions from %d facts\n" test fact))
+  (nrepl-dbind-response summary (check error fact fail ns pass to-do)
+    (insert (format "Checked %d namespaces\n" ns))
+    (insert (format "%d checks from %d facts\n" check fact))
     (unless (zerop fail)
       (cider-insert (format "%d failures" fail) 'emidje-failure-face t))
     (unless (zerop error)
       (cider-insert (format "%d errors" error) 'emidje-error-face t))
-    (unless (zerop skip)
-      (cider-insert (format "%d to do" skip) 'emidje-work-todo-face t))
+    (unless (zerop to-do)
+      (cider-insert (format "%d to do" to-do) 'emidje-work-todo-face t))
     (when (zerop (+ fail error))
       (cider-insert (format "%d passed" pass) 'emidje-success-face t))
     (insert "\n")))
@@ -313,16 +313,16 @@ If the tests were successful and there's a test report buffer rendered, kills it
         (goto-char (point-min))))))
 
 (defun emidje-echo-summary (summary)
-  (nrepl-dbind-response summary (error fact fail ns pass test skip)
-    (if (zerop test)
-        (message (propertize "No tests were run. Is that what you wanted?"
+  (nrepl-dbind-response summary (check error fact fail ns pass to-do)
+    (if (zerop check)
+        (message (propertize "No facts were checked. Is that what you wanted?"
                              'face 'emidje-error-face))
       (let ((face (cond
                    ((not (zerop error)) 'emidje-error-face)
                    ((not (zerop fail)) 'emidje-failure-face)
                    (t 'emidje-success-face))))
         (message (propertize
-                  (format "Tested %d namespace(s). Ran %d assertions from %d facts. %d failures, %d errors, %d to do." ns test fact fail error skip) 'face face))))))
+                  (format "Checked %d namespace(s). %d checks from %d facts. %d failures, %d errors, %d to do." ns check fact fail error to-do) 'face face))))))
 
 (defun emidje-read-test-description-at-point ()
   (save-excursion (down-list)
