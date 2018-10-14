@@ -207,15 +207,13 @@ Treats ansi colors appropriately."
 
 (defun emidje-render-one-test-result (result)
   (nrepl-dbind-response result (context expected actual error message type)
-    (cl-flet ((insert-label (s)
-                            (cider-insert (format "%8s: " s) 'font-lock-comment-face))
-              (insert-align-label (s)
-                                  (insert (format "%12s" s))))
+    (cl-flet ((insert-label (text)
+                            (cider-insert (format "%8s: " text) 'font-lock-comment-face)))
       (cider-propertize-region (cider-intern-keys (cdr result))
         (let ((begin (point))
               (type-face (cider-test-type-simple-face type))
               (bg `(:background ,cider-test-items-background-color)))
-          (if (equal type "skip")
+          (if (equal type "to-do")
               (cider-insert "Work To Do " 'emidje-work-todo-face nil)
             (cider-insert (capitalize type) type-face nil " in "))
           (dolist (text context)
@@ -272,7 +270,7 @@ Treats ansi colors appropriately."
 (defun emidje-render-test-summary (summary)
   (nrepl-dbind-response summary (check error fact fail ns pass to-do)
     (insert (format "Checked %d namespaces\n" ns))
-    (insert (format "%d checks from %d facts\n" check fact))
+    (insert (format "Ran %d checks in %d facts\n" check fact))
     (unless (zerop fail)
       (cider-insert (format "%d failures" fail) 'emidje-failure-face t))
     (unless (zerop error)
@@ -312,17 +310,23 @@ If the tests were successful and there's a test report buffer rendered, kills it
         (emidje-render-test-results results)
         (goto-char (point-min))))))
 
-(defun emidje-echo-summary (summary)
-  (nrepl-dbind-response summary (check error fact fail ns pass to-do)
+(defun emidje-echo-summary (operation-type namespace summary)
+  (nrepl-dbind-response summary (check error fact fail to-do)
     (if (zerop check)
         (message (propertize "No facts were checked. Is that what you wanted?"
                              'face 'emidje-error-face))
-      (let ((face (cond
+      (let ((possible-test-ns (if (equal operation-type :ns)
+                                  (format "%s: " namespace)
+                                ""))
+            (possible-future-facts (if (zerop to-do)
+                                       ""
+                                     (format ", %d to do" to-do)))
+            (face (cond
                    ((not (zerop error)) 'emidje-error-face)
                    ((not (zerop fail)) 'emidje-failure-face)
                    (t 'emidje-success-face))))
         (message (propertize
-                  (format "Checked %d namespace(s). %d checks from %d facts. %d failures, %d errors, %d to do." ns check fact fail error to-do) 'face face))))))
+                  (format "%sRan %d checks in %d facts. %d failures, %d errors%s." possible-test-ns check fact fail error possible-future-facts) 'face face))))))
 
 (defun emidje-read-test-description-at-point ()
   (ignore-errors
@@ -349,14 +353,14 @@ If the tests were successful and there's a test report buffer rendered, kills it
                        (lambda (response)
                          (nrepl-dbind-response response (results summary)
                            (when (and results summary)
-                             (emidje-echo-summary summary)
+                             (emidje-echo-summary operation-type (plist-get message 'ns) summary)
                              (emidje-render-test-report results summary))))))
 
 (defun emidje-run-all-tests ()
   (interactive)
   (emidje-send-test-request :project))
 
-(defun emidje-namespace-to-be-tested ()
+(defun emidje-current-test-ns ()
   (let ((current-ns (cider-current-ns t)))
     (if (string-equal current-ns "user")
         (user-error "No namespace to be tested in the current context")
@@ -364,7 +368,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
 
 (defun emidje-run-ns-tests ()
   (interactive)
-  (let ((namespace (emidje-namespace-to-be-tested)))
+  (let ((namespace (emidje-current-test-ns)))
     (emidje-send-test-request :ns `(ns ,namespace))))
 
 (defun emidje-run-test-at-point ()
