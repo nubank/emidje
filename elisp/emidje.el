@@ -423,9 +423,11 @@ If the tests were successful and there's a test report buffer rendered, kills it
 (advice-add 'nrepl-send-sync-request :around #'emidje-instrumented-nrepl-send-request)
 
 (defun emidje-toggle-load-facts-on-eval ()
-  "Toggles the value of emidje-load-facts-on-eval"
+  "Toggles the value of emidje-load-facts-on-eval."
   (interactive)
-  (setq emidje-load-facts-on-eval (not emidje-load-facts-on-eval)))
+  (let ((switch (not emidje-load-facts-on-eval)))
+    (setq emidje-load-facts-on-eval switch)
+    (message "Turned %s %s" (if switch "on" "off") 'emidje-load-facts-on-eval)))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
