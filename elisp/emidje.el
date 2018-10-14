@@ -72,6 +72,14 @@
         current-ns
       (concat current-ns suffix))))
 
+(defcustom emidje-show-full-test-summary t
+  "When set to t, Emidje shows a full test summary on the message buffer after running tests.
+
+Set to nil if you prefer to see a shorter version of test summaries."
+  :type 'boolean
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
 (defcustom emidje-suppress-middleware-warnings nil
   "When set to t, no middleware warnings are shown on the REPL."
   :type 'boolean
@@ -310,23 +318,32 @@ If the tests were successful and there's a test report buffer rendered, kills it
         (emidje-render-test-results results)
         (goto-char (point-min))))))
 
+(defun emidje-summarize-test-results (operation-type namespace summary)
+  "Returns a string summarizing test results according to user's preferences."
+  (nrepl-dbind-response summary (check fact error fail pass to-do)
+    (let ((possible-test-ns (if (equal operation-type :ns)
+                                (format "%s: " namespace)
+                              ""))
+          (possible-future-facts (if (zerop to-do)
+                                     ""
+                                   (format ", %d to do" to-do))))
+      (cond
+       (emidje-show-full-test-summary (format "%sRan %d checks in %d facts. %d failures, %d errors%s." possible-test-ns check fact fail error possible-future-facts))
+       ((zerop (+ error fail)) (format "All checks (%d) succeeded." check))
+       (t (format "%d checks failed, but %d succeeded." (+ error fail) pass))))))
+
 (defun emidje-echo-summary (operation-type namespace summary)
-  (nrepl-dbind-response summary (check error fact fail to-do)
-    (if (zerop check)
+  "Shows a test summary on the message buffer."
+  (nrepl-dbind-response summary (check fail error)
+    (if (and (zerop check) (zerop error))
         (message (propertize "No facts were checked. Is that what you wanted?"
                              'face 'emidje-error-face))
-      (let ((possible-test-ns (if (equal operation-type :ns)
-                                  (format "%s: " namespace)
-                                ""))
-            (possible-future-facts (if (zerop to-do)
-                                       ""
-                                     (format ", %d to do" to-do)))
-            (face (cond
+      (let ((face (cond
                    ((not (zerop error)) 'emidje-error-face)
                    ((not (zerop fail)) 'emidje-failure-face)
                    (t 'emidje-success-face))))
         (message (propertize
-                  (format "%sRan %d checks in %d facts. %d failures, %d errors%s." possible-test-ns check fact fail error possible-future-facts) 'face face))))))
+                  (emidje-summarize-test-results operation-type namespace summary) 'face face))))))
 
 (defun emidje-read-test-description-at-point ()
   (ignore-errors
