@@ -325,12 +325,13 @@ If the tests were successful and there's a test report buffer rendered, kills it
                   (format "Checked %d namespace(s). %d checks from %d facts. %d failures, %d errors, %d to do." ns check fact fail error to-do) 'face face))))))
 
 (defun emidje-read-test-description-at-point ()
-  (save-excursion (down-list)
-                  (forward-sexp 2)
-                  (let ((possible-description (sexp-at-point)))
-                    (if (stringp possible-description)
-                        (format "\"%s\" " possible-description)
-                      ""))))
+  (ignore-errors
+    (save-excursion (down-list)
+                    (forward-sexp 2)
+                    (let ((possible-description (sexp-at-point)))
+                      (if (stringp possible-description)
+                          (format "\"%s\" " possible-description)
+                        "")))))
 
 (defun emidje-echo-running-tests (op-type args)
   (let* ((ns (plist-get args 'ns))
