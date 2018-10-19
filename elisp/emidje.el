@@ -89,7 +89,7 @@ Set to nil if you prefer to see a shorter version of test summaries."
 (defconst emidje-evaluation-operations (list "eval" "load-file")
   "List of nREPL operations that cause the evaluation of Clojure forms.")
 
-(defconst emidje-report-buffer "*midje-test-report*")
+(defconst emidje-test-report-buffer "*midje-test-report*")
 
 (defvar emidje-supported-operations
   '((:version . "midje-nrepl-version")
@@ -289,13 +289,9 @@ Treats ansi colors appropriately."
       (cider-insert (format "%d passed" pass) 'emidje-success-face t))
     (insert "\n")))
 
-(defun emidje-get-test-report-buffer ()
-  (or (get-buffer emidje-report-buffer)
-      (cider-popup-buffer emidje-report-buffer t)))
-
 (defun emidje-kill-test-report-buffer ()
   "Kills the test report buffer if it exists."
-  (when-let ((buffer (get-buffer emidje-report-buffer)))
+  (when-let ((buffer (get-buffer emidje-test-report-buffer)))
     (kill-buffer buffer)))
 
 (defun emidje-tests-passed-p (summary)
@@ -308,7 +304,8 @@ Treats ansi colors appropriately."
 If the tests were successful and there's a test report buffer rendered, kills it."
   (if (emidje-tests-passed-p summary)
       (emidje-kill-test-report-buffer)
-    (with-current-buffer (emidje-get-test-report-buffer)
+    (with-current-buffer (or (get-buffer emidje-test-report-buffer)
+                             (cider-popup-buffer emidje-test-report-buffer t))
       (emidje-report-mode)
       (let ((inhibit-read-only t))
         (erase-buffer)
@@ -401,6 +398,13 @@ If the tests were successful and there's a test report buffer rendered, kills it
   (interactive)
   (emidje-send-test-request :retest))
 
+(defun emidje-show-test-report ()
+  "Show the test report buffer, if one exists."
+  (interactive)
+  (if-let (test-report-buffer (get-buffer emidje-test-report-buffer))
+      (switch-to-buffer test-report-buffer)
+    (user-error "No test report buffer")))
+
 (defun emidje-jump-to-test-definition (&optional arg)
   (interactive "p")
   (let* ((file (or (get-text-property (point) 'file)
@@ -439,7 +443,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
 (advice-add'nrepl-send-request :around #'emidje-instrumented-nrepl-send-request)
 (advice-add 'nrepl-send-sync-request :around #'emidje-instrumented-nrepl-send-request)
 
-(defun emidje-toggle-load-facts-on-eval (globally)
+(defun emidje-toggle-load-facts-on-eval (&optional globally)
   "Toggles the value of emidje-load-facts-on-eval.
 When called with an interactive prefix argument, toggles the default value of this variable globally."
   (interactive "P")
@@ -465,6 +469,7 @@ When called with an interactive prefix argument, toggles the default value of th
     (define-key map (kbd "C-c C-j n") #'emidje-run-ns-tests)
     (define-key map (kbd "C-c C-j t") #'emidje-run-test-at-point)
     (define-key map (kbd "C-c C-j r") #'emidje-re-run-non-passing-tests)
+    (define-key map (kbd "C-c C-j s") #'emidje-show-test-report)
     map))
 
 (define-derived-mode emidje-report-mode special-mode "Test Report"
