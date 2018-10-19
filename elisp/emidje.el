@@ -439,12 +439,19 @@ If the tests were successful and there's a test report buffer rendered, kills it
 (advice-add'nrepl-send-request :around #'emidje-instrumented-nrepl-send-request)
 (advice-add 'nrepl-send-sync-request :around #'emidje-instrumented-nrepl-send-request)
 
-(defun emidje-toggle-load-facts-on-eval ()
-  "Toggles the value of emidje-load-facts-on-eval."
-  (interactive)
+(defun emidje-toggle-load-facts-on-eval (globally)
+  "Toggles the value of emidje-load-facts-on-eval.
+When called with an interactive prefix argument, toggles the default value of this variable globally."
+  (interactive "P")
   (let ((switch (not emidje-load-facts-on-eval)))
-    (setq emidje-load-facts-on-eval switch)
-    (message "Turned %s %s" (if switch "on" "off") 'emidje-load-facts-on-eval)))
+    (if globally
+        (setq-default emidje-load-facts-on-eval switch)
+      (progn (make-local-variable 'emidje-load-facts-on-eval)
+             (setq emidje-load-facts-on-eval switch)))
+    (message "Turned %s %s %s"
+             (if switch "on" "off")
+             'emidje-load-facts-on-eval
+             (if globally "globally" "locally"))))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
@@ -481,6 +488,9 @@ enable the mode if ARG is omitted or nil.
 
 (when (fboundp 'clojure-mode)
   (add-hook 'clojure-mode-hook #'emidje-mode t))
+
+(when (fboundp 'cider-repl-mode-hook)
+  (add-hook 'cider-repl-mode-hook #'emidje-mode t))
 
 (provide 'emidje)
 
