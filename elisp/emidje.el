@@ -494,7 +494,7 @@ enable the mode if ARG is omitted or nil.
 (when (fboundp 'clojure-mode)
   (add-hook 'clojure-mode-hook #'emidje-mode t))
 
-(when (fboundp 'cider-repl-mode-hook)
+(when (fboundp 'cider-repl-mode)
   (add-hook 'cider-repl-mode-hook #'emidje-mode t))
 
 (provide 'emidje)
