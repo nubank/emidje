@@ -405,17 +405,6 @@ If the tests were successful and there's a test report buffer rendered, kills it
       (switch-to-buffer test-report-buffer)
     (user-error "No test report buffer")))
 
-(defun emidje-jump-to-test-definition (&optional arg)
-  (interactive "p")
-  (let* ((file (or (get-text-property (point) 'file)
-                   (user-error "Nothing to be visited here")))
-         (line (or (get-text-property (point) 'line) 1))
-         (buffer (cider--find-buffer-for-file file))
-         (other-window nil))
-    (if buffer
-        (cider-jump-to buffer (cons line 1) other-window)
-      (error "No source location"))))
-
 (defun emidje-send-format-request (sexpr)
   (thread-first
       (emidje-send-request :format-tabular `(code ,sexpr))
@@ -457,8 +446,74 @@ When called with an interactive prefix argument, toggles the default value of th
              'emidje-load-facts-on-eval
              (if globally "globally" "locally"))))
 
+(defun emidje-search-test-result-change (position search-function predicate-function)
+  (let* ((position (funcall search-function position 'type))
+         (test-result-type (when position
+                             (get-text-property position 'type))))
+    (cond
+     ((not test-result-type) nil)
+     ((funcall predicate-function test-result-type) position)
+     (t (emidje-search-test-result-change position search-function predicate-function)))))
+
+(defun emidje-move-point-to (direction test-result-type &optional friendly-result-name)
+  (with-current-buffer (get-buffer emidje-test-report-buffer)
+    (let* ((search-function (if (equal direction 'next) #'next-single-property-change #'previous-single-property-change))
+           (predicate-function (if (equal test-result-type 'result) (apply-partially 'identity) (apply-partially 'equal (symbol-name test-result-type))))
+           (position (emidje-search-test-result-change (point) search-function predicate-function)))
+      (if position
+          (goto-char position)
+        (user-error "No %s %s in the test report" direction (or friendly-result-name test-result-type))))))
+
+(defun emidje-next-result ()
+  "Go to next test result in the test report buffer."
+  (interactive)
+  (emidje-move-point-to 'next 'result))
+
+(defun emidje-previous-result ()
+  "Go to previous test result in the test report buffer."
+  (interactive)
+  (emidje-move-point-to 'previous 'result))
+
+(defun emidje-next-error ()
+  "Go to next test error in the test report buffer."
+  (interactive)
+  (emidje-move-point-to 'next 'error))
+
+(defun emidje-previous-error ()
+  "Go to previous test error in the test report buffer."
+  (interactive)
+  (emidje-move-point-to 'previous 'error))
+
+(defun emidje-next-failure ()
+  "Go to next test failure in the test report buffer."
+  (interactive)
+  (emidje-move-point-to 'next 'fail "failure"))
+
+(defun emidje-previous-failure ()
+  "Go to previous test failure in the test report buffer."
+  (interactive)
+  (emidje-move-point-to 'previous 'fail "failure"))
+
+(defun emidje-jump-to-test-definition (&optional other-window)
+  "Jump to test definition at point.
+If called interactively with a prefix argument, visit the file in question in a new window."
+  (interactive "p")
+  (let* ((file (or (get-text-property (point) 'file)
+                   (user-error "Nothing to be visited here")))
+         (line (or (get-text-property (point) 'line) 1))
+         (buffer (cider--find-buffer-for-file file)))
+    (if buffer
+        (cider-jump-to buffer (cons line 1) other-window)
+      (error "No source location"))))
+
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "n r") #'emidje-next-result)
+    (define-key map (kbd "p r") #'emidje-previous-result)
+    (define-key map (kbd "n e") #'emidje-next-error)
+    (define-key map (kbd "p e") #'emidje-previous-error)
+    (define-key map (kbd "n f") #'emidje-next-failure)
+    (define-key map (kbd "p f") #'emidje-previous-failure)
     (define-key map (kbd "RET") #'emidje-jump-to-test-definition)
     map))
 
