@@ -361,7 +361,7 @@ If the tests were successful and there's a test report buffer rendered, kill it.
       (      :retest (message "Re-running non-passing tests...")))))
 
 (defun emidje-send-test-request (operation-type &optional message)
-  "Send the test message asynchronously and shows the test report when applicable."
+  "Send the test message asynchronously and show the test report when applicable."
   (emidje-echo-running-tests operation-type message)
   (emidje-send-request operation-type message
                        (lambda (response)
@@ -371,21 +371,26 @@ If the tests were successful and there's a test report buffer rendered, kill it.
                              (emidje-render-test-report results summary))))))
 
 (defun emidje-run-all-tests ()
+  "Run tests defined in all project namespaces."
   (interactive)
   (emidje-send-test-request :project))
 
 (defun emidje-current-test-ns ()
+  "Return the test namespace that corresponds to the current Clojure namespace context."
   (let ((current-ns (cider-current-ns t)))
     (if (string-equal current-ns "user")
         (user-error "No namespace to be tested in the current context")
       (funcall emidje-infer-test-ns-function current-ns))))
 
 (defun emidje-run-ns-tests ()
+  "Run all tests in the current Clojure namespace context."
   (interactive)
   (let ((namespace (emidje-current-test-ns)))
     (emidje-send-test-request :ns `(ns ,namespace))))
 
 (defun emidje-run-test-at-point ()
+  "Run test at point.
+Test means facts, fact, tabular or any Clojure form containing any of those."
   (interactive)
   (let* ((ns (cider-current-ns t))
          (sexp (cider-sexp-at-point))
@@ -395,6 +400,7 @@ If the tests were successful and there's a test report buffer rendered, kill it.
                                                   line ,line-number))))
 
 (defun emidje-re-run-non-passing-tests ()
+  "Re-run tests that didn't pass in the last execution."
   (interactive)
   (emidje-send-test-request :retest))
 
@@ -406,18 +412,21 @@ If the tests were successful and there's a test report buffer rendered, kill it.
     (user-error "No test report buffer")))
 
 (defun emidje-send-format-request (sexpr)
+  "Send a format request with the specified sexpr to nREPL middleware.
+Return the formatted sexpr."
   (thread-first
       (emidje-send-request :format-tabular `(code ,sexpr))
     (nrepl-dict-get "formatted-code")))
 
 (defun emidje-format-tabular ()
+  "Format tabular fact at point."
   (interactive)
   (save-excursion
     (mark-sexp)
     (cider--format-region (region-beginning) (region-end) #'emidje-send-format-request)))
 
 (defun emidje-instrumented-nrepl-send-request (original-function request &rest args)
-  "Instruments nrepl-send-request and nrepl-send-sync-request functions by appending the parameter load-tests? to the request when applicable"
+  "Instrument nrepl-send-request and nrepl-send-sync-request functions by appending the parameter load-tests? to the request when applicable."
   (let* ((op (thread-last request
                (seq-drop-while (lambda (candidate)
                                  (not (equal candidate "op"))))
@@ -494,8 +503,8 @@ When called with an interactive prefix argument, toggles the default value of th
   (interactive)
   (emidje-move-point-to 'previous 'fail "failure"))
 
-(defun emidje-jump-to-test-definition (&optional other-window)
-  "Jump to test definition at point.
+(defun emidje-jump-to-definition (&optional other-window)
+  "Jump to definition of namespace or test result at point.
 If called interactively with a prefix argument, visit the file in question in a new window."
   (interactive "p")
   (let* ((file (or (get-text-property (point) 'file)
@@ -536,7 +545,7 @@ If called interactively with a prefix argument, visit the file in question in a 
     (define-key map (kbd "p e") #'emidje-previous-error)
     (define-key map (kbd "n f") #'emidje-next-failure)
     (define-key map (kbd "p f") #'emidje-previous-failure)
-    (define-key map (kbd "RET") #'emidje-jump-to-test-definition)
+    (define-key map (kbd "RET") #'emidje-jump-to-definition)
     map))
 
 (defvar emidje-commands-map
