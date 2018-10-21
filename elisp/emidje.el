@@ -54,10 +54,10 @@
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
-(defcustom emidje-load-facts-on-eval nil
-  "When set to nil (the default value), Midje facts won't be loaded on operations that cause the evaluation of Clojure forms like eval and load-file"
-  :type 'boolean
+(defcustom emidje-inject-nrepl-middleware-at-jack-in t
+  "When nil, do not inject `midje-nrepl' at `cider-jack-in' time."
   :group 'emidje
+  :type 'boolean
   :package-version '(emidje . "0.1.0"))
 
 (defcustom emidje-infer-test-ns-function 'emidje-default-infer-test-ns-function
@@ -72,6 +72,12 @@
         current-ns
       (concat current-ns suffix))))
 
+(defcustom emidje-load-facts-on-eval nil
+  "When set to nil, Midje facts won't be loaded on operations that cause the evaluation of Clojure forms like eval and load-file"
+  :type 'boolean
+  :group 'emidje
+  :package-version '(emidje . "0.1.0"))
+
 (defcustom emidje-show-full-test-summary t
   "When set to t, Emidje shows a full test summary on the message buffer after running tests.
 
@@ -80,8 +86,8 @@ Set to nil if you prefer to see a shorter version of test summaries."
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
-(defcustom emidje-suppress-middleware-warnings nil
-  "When set to t, no middleware warnings are shown on the REPL."
+(defcustom emidje-suppress-nrepl-middleware-warnings nil
+  "When set to t, no nREPL middleware warnings are shown on the REPL."
   :type 'boolean
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
@@ -89,7 +95,8 @@ Set to nil if you prefer to see a shorter version of test summaries."
 (defconst emidje-evaluation-operations (list "eval" "load-file")
   "List of nREPL operations that cause the evaluation of Clojure forms.")
 
-(defconst emidje-test-report-buffer "*midje-test-report*")
+(defconst emidje-test-report-buffer "*midje-test-report*"
+  "The title of test report buffer.")
 
 (defvar emidje-supported-operations
   '((:version . "midje-nrepl-version")
@@ -101,7 +108,7 @@ Set to nil if you prefer to see a shorter version of test summaries."
     (:test-stacktrace . "midje-test-stacktrace")))
 
 (defun emidje-render-stacktrace (causes)
-  "Renders the Cider error buffer with the given causes."
+  "Render the Cider error buffer with the given causes."
   (cider-stacktrace-render
    (cider-popup-buffer cider-error-buffer
                        cider-auto-select-error-buffer
@@ -109,6 +116,7 @@ Set to nil if you prefer to see a shorter version of test summaries."
    causes))
 
 (defun emidje-handle-error-response (response)
+  "Generic handler for error responses returned by `midje-nrepl'."
   (nrepl-dbind-response response (error-message exception status)
     (cond
      (error-message (user-error error-message)
@@ -116,6 +124,8 @@ Set to nil if you prefer to see a shorter version of test summaries."
                     (t (user-error "midje-nrepl returned the following status: %st" (mapconcat #'identity status ", ")))))))
 
 (defun emidje-handle-nrepl-response (handler-function response)
+  "Handle the nREPL response by delegating to the specified handler function.
+If the response contains the `error' status, handle the response by using the generic error handler above."
   (nrepl-dbind-response response (status)
     (if (seq-contains status "error")
         (emidje-handle-error-response response)
@@ -136,7 +146,7 @@ Set to nil if you prefer to see a shorter version of test summaries."
         (emidje-handle-nrepl-response #'identity)))))
 
 (defun emidje-package-version ()
-  "Gets Emidje's current version from the package header."
+  "Get Emidje's current version from the package header."
   (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.*\\)$")
         (version (pkg-info-version-info 'emidje)))
     (if (not (string-match version-regex version))
@@ -144,65 +154,42 @@ Set to nil if you prefer to see a shorter version of test summaries."
       (concat (match-string 1 version) "-" (upcase (match-string 2 version))))))
 
 (defun emidje-show-warning-on-repl (message &rest args)
-  "If emidje-suppress-middleware-warnings isn't set to t, shows the message on the Cider's REPL buffer."
-  (unless emidje-suppress-middleware-warnings
+  "If `emidje-suppress-nrepl-middleware-warnings' isn't set to t, show the message on the Cider's REPL buffer."
+  (unless emidje-suppress-nrepl-middleware-warnings
     (cider-repl-emit-interactive-stderr
      (apply #'format (concat "WARNING: " message
-                             "\nYou can mute this warning by changing the variable emidje-suppress-middleware-warnings to t.")
+                             "\nYou can mute this warning by changing the variable emidje-suppress-nrepl-middleware-warnings to t.")
             args))))
 
-(defun emidje-check-midje-nrepl-version ()
-  "Checks whether midje-nrepl is available on the project's classpath and its version matches Emidje's version.
-Shows warning messages on Cider's REPL when applicable."
+(defun emidje-check-nrepl-middleware-version ()
+  "Check whether `midje-nrepl' is available on the project's classpath and its version matches emidje's version.
+Show warning messages on Cider's REPL when applicable."
   (let ((emidje-version (emidje-package-version))
         (midje-nrepl-version (nrepl-dict-get-in (emidje-send-request :version) `("midje-nrepl" "version-string"))))
     (cond
      ((not midje-nrepl-version)
-      (emidje-show-warning-on-repl "midje-nrepl isn't in your classpath; Emidje keybindings won't work.
+      (emidje-show-warning-on-repl "midje-nrepl isn't in your classpath; Emidje keybindings won't work!
  You can either start this REPL via cider-jack-in or add midje-nrepl to your profile.clj dependencies."))
      ((not (string-equal emidje-version midje-nrepl-version))
       (emidje-show-warning-on-repl "Emidje and midje-nrepl are out of sync. Things will break!
 Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
-(defun emidje-inject-jack-in-dependencies ()
-  "Adds midje-nrepl to the Cider's list of Lein plugins.
-The midje-nrepl's version is inferred by calling emidje-package-version.
-Therefore, when the REPL is open via cider-jack-in, Emidje's version and midje-nrepl's version will be in sync."
-  (when (boundp 'cider-jack-in-lein-plugins)
+(defun emidje-inject-nrepl-middleware ()
+  "Add midje-nrepl to the Cider's list of Lein plugins."
+  (when (and (boundp 'cider-jack-in-lein-plugins)
+             emidje-inject-nrepl-middleware-at-jack-in)
     (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t)))
 
 ;;;###autoload
 (eval-after-load 'cider
-  '(emidje-inject-jack-in-dependencies))
+  '(emidje-inject-nrepl-middleware))
 
-(add-hook 'cider-connected-hook #'emidje-check-midje-nrepl-version)
-
-(defun emidje-show-test-stacktrace-at (ns index)
-  "Shows the stacktrace for the error whose location within the report map is given by the ns and index."
-  (let ((causes (list)))
-    (emidje-send-request :test-stacktrace `(ns ,ns
-                                               index ,index
-                                               print-fn "clojure.lang/println")
-                         (lambda (response)
-                           (nrepl-dbind-response response (class status)
-                             (cond (class  (setq causes (cons response causes)))
-                                   (status (when causes
-                                             (emidje-render-stacktrace (reverse causes))))))))))
-
-(defun emidje-show-test-stacktrace ()
-  "Shows the stacktrace for the erring test at point."
-  (interactive)
-  (let ((ns    (get-text-property (point) 'ns))
-        (index (get-text-property (point) 'index))
-        (error (get-text-property (point) 'error)))
-    (if (and error ns index)
-        (emidje-show-test-stacktrace-at ns index)
-      (message "No test error at point"))))
+(add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version)
 
 (defun emidje-insert-section (content)
-  "Inserts the content of expected, actual and checker message sections in the current buffer's position.
-Treats ansi colors appropriately."
+  "Insert the content of expected, actual and checker message sections in the current buffer's position.
+Treat ansi colors appropriately."
   (let* ((begin (point))
          (lines (if (stringp content)
                     (split-string content "\n")
@@ -214,6 +201,7 @@ Treats ansi colors appropriately."
     (beginning-of-line)))
 
 (defun emidje-render-one-test-result (result)
+  "Render one test result in the current buffer's position."
   (nrepl-dbind-response result (context expected actual error message type)
     (cl-flet ((insert-label (text)
                             (cider-insert (format "%8s: " text) 'font-lock-comment-face)))
@@ -248,17 +236,20 @@ Treats ansi colors appropriately."
           (overlay-put (make-overlay begin (point)) 'font-lock-face bg))))))
 
 (defun emidje-count-non-passing-tests (results)
+  "Return the number of non-passing tests."
   (seq-count (lambda (result)
                (let* ((type (nrepl-dict-get result "type")))
                  (or (equal type "error")
                      (equal type "fail")))) results))
 
 (defun emidje-get-displayable-results (results)
+  "Return a new result dict without passing tests."
   (seq-filter (lambda (result)
                 (not (equal (nrepl-dict-get result "type") "pass")))
               results))
 
 (defun emidje-render-test-results (results-dict)
+  "Render test results in the current buffer's position."
   (cider-insert "Results" 'bold t "\n")
   (nrepl-dict-map (lambda (ns results)
                     (let* ((displayable-results (emidje-get-displayable-results results))
@@ -271,11 +262,20 @@ Treats ansi colors appropriately."
                     ) results-dict))
 
 (defun emidje-render-list-of-namespaces (results)
-  (dolist (namespace (nrepl-dict-keys results))
-    (insert (cider-propertize namespace 'ns) "\n")
-    (insert "\n")))
+  "Render a list of tested namespaces in the current buffer.
+Propertize each namespace appropriately in order to allow users to jump to the file in question."
+  (cl-flet ((file-path-for (namespace)
+                           (thread-first results
+                             (nrepl-dict-get namespace)
+                             car
+                             (nrepl-dict-get "file"))))
+    (dolist (namespace (nrepl-dict-keys results))
+      (insert (propertize (cider-propertize namespace 'ns)
+                          'file (file-path-for namespace)) "\n")
+      (insert "\n"))))
 
 (defun emidje-render-test-summary (summary)
+  "Render the test summary in the current buffer's position."
   (nrepl-dbind-response summary (check error fact fail ns pass to-do)
     (insert (format "Checked %d namespaces\n" ns))
     (insert (format "Ran %d checks in %d facts\n" check fact))
@@ -290,18 +290,18 @@ Treats ansi colors appropriately."
     (insert "\n")))
 
 (defun emidje-kill-test-report-buffer ()
-  "Kills the test report buffer if it exists."
+  "Kill the test report buffer if one exists."
   (when-let ((buffer (get-buffer emidje-test-report-buffer)))
     (kill-buffer buffer)))
 
 (defun emidje-tests-passed-p (summary)
-  "Returns t if all tests passed."
+  "Return t if all tests passed."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
 (defun emidje-render-test-report (results summary)
-  "Renders the test report if there are erring and/or failing tests.
-If the tests were successful and there's a test report buffer rendered, kills it."
+  "Render the test report if there are erring and/or failing tests.
+If the tests were successful and there's a test report buffer rendered, kill it."
   (if (emidje-tests-passed-p summary)
       (emidje-kill-test-report-buffer)
     (with-current-buffer (or (get-buffer emidje-test-report-buffer)
@@ -316,7 +316,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
         (goto-char (point-min))))))
 
 (defun emidje-summarize-test-results (operation-type namespace summary)
-  "Returns a string summarizing test results according to user's preferences."
+  "Return a string summarizing test results according to user's preferences."
   (nrepl-dbind-response summary (check fact error fail pass to-do)
     (let ((possible-test-ns (if (equal operation-type :ns)
                                 (format "%s: " namespace)
@@ -330,7 +330,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
        (t (format "%d checks failed, but %d succeeded." (+ error fail) pass))))))
 
 (defun emidje-echo-summary (operation-type namespace summary)
-  "Shows a test summary on the message buffer."
+  "Show a test summary on the message buffer."
   (nrepl-dbind-response summary (check fail error)
     (if (and (zerop check) (zerop error))
         (message (propertize "No facts were checked. Is that what you wanted?"
@@ -361,7 +361,7 @@ If the tests were successful and there's a test report buffer rendered, kills it
       (      :retest (message "Re-running non-passing tests...")))))
 
 (defun emidje-send-test-request (operation-type &optional message)
-  "Sends the test message asynchronously and shows the test report when applicable."
+  "Send the test message asynchronously and shows the test report when applicable."
   (emidje-echo-running-tests operation-type message)
   (emidje-send-request operation-type message
                        (lambda (response)
@@ -505,6 +505,28 @@ If called interactively with a prefix argument, visit the file in question in a 
     (if buffer
         (cider-jump-to buffer (cons line 1) other-window)
       (error "No source location"))))
+
+(defun emidje-show-test-stacktrace-at (ns index)
+  "Show the stacktrace for the error whose location within the report map is given by the ns and index."
+  (let ((causes (list)))
+    (emidje-send-request :test-stacktrace `(ns ,ns
+                                               index ,index
+                                               print-fn "clojure.lang/println")
+                         (lambda (response)
+                           (nrepl-dbind-response response (class status)
+                             (cond (class  (setq causes (cons response causes)))
+                                   (status (when causes
+                                             (emidje-render-stacktrace (reverse causes))))))))))
+
+(defun emidje-show-test-stacktrace ()
+  "Show the stacktrace for the erring test at point."
+  (interactive)
+  (let ((ns    (get-text-property (point) 'ns))
+        (index (get-text-property (point) 'index))
+        (error (get-text-property (point) 'error)))
+    (if (and error ns index)
+        (emidje-show-test-stacktrace-at ns index)
+      (message "No test error at point"))))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
