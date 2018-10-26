@@ -116,12 +116,12 @@ Set to nil if you prefer to see a shorter version of test summaries."
    causes))
 
 (defun emidje-handle-error-response (response)
-  "Generic handler for error responses returned by `midje-nrepl'."
+  "Handle error responses returned by `midje-nrepl'."
   (nrepl-dbind-response response (error-message exception status)
     (cond
-     (error-message (user-error error-message)
-                    (exception (emidje-render-stacktrace exception))
-                    (t (user-error "midje-nrepl returned the following status: %st" (mapconcat #'identity status ", ")))))))
+     (error-message (user-error error-message))
+     (exception (emidje-render-stacktrace exception))
+     (t (user-error "midje-nrepl returned the following status: %st" (mapconcat #'identity status ", "))))))
 
 (defun emidje-handle-nrepl-response (handler-function response)
   "Handle the nREPL response by delegating to the specified handler function.
