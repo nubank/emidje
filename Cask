@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package-file "elisp/emidje.el")
+(package-file "emidje.el")
 
 (development
 (depends-on "ecukes")

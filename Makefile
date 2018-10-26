@@ -1,8 +1,5 @@
-elisp_files := $(wildcard **/*.el)
+elisp_files := $(wildcard *.el)
 linting_files := $(filter-out %-autoloads.el,$(elisp_files))
-
-foo:
-	@echo $(elisp_files)
 
 install:
 	@echo "Installing project dependencies..."
