@@ -189,6 +189,7 @@ Show warning messages on Cider's REPL when applicable."
 Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
+;;;###autoload
 (defun emidje-inject-nrepl-middleware ()
   "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
   (when (and (boundp 'cider-jack-in-lein-plugins)
@@ -250,14 +251,14 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
           (overlay-put (make-overlay begin (point)) 'font-lock-face bg))))))
 
 (defun emidje-count-non-passing-tests (results)
-  "Return the number of non-passing tests from the RESULTS list."
+  "Return the number of non-passing test results from the RESULTS list."
   (seq-count (lambda (result)
                (let* ((type (nrepl-dict-get result "type")))
                  (or (equal type "error")
                      (equal type "fail")))) results))
 
 (defun emidje-get-displayable-results (results)
-  "Filter RESULTS by returning a new list without passing tests."
+  "Filter RESULTS by returning a new list without passing facts."
   (seq-filter (lambda (result)
                 (not (equal (nrepl-dict-get result "type") "pass")))
               results))
@@ -281,7 +282,7 @@ Propertize each namespace appropriately in order to allow users
 to jump to the file in question.  RESULTS-DICT is a dictionary of
 namespaces to test results."
   (cl-flet ((file-path-for (namespace)
-                           (thread-first results
+                           (thread-first results-dict
                              (nrepl-dict-get namespace)
                              car
                              (nrepl-dict-get "file"))))
@@ -311,13 +312,13 @@ namespaces to test results."
     (kill-buffer buffer)))
 
 (defun emidje-tests-passed-p (summary)
-  "Return t if all tests passed.
-SUMMARY is a dict."
+  "Return t if every test passed.
+SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
 (defun emidje-render-test-report (results summary)
-  "Render the test report if there are erring and/or failing tests.
+  "Render the test report if there are erring and/or failing test results.
 If the tests were successful and there's a test report buffer rendered, kill it.
 RESULTS is a dict of namespaces to test results.
 SUMMARY is a dict containing test counters."
@@ -378,7 +379,7 @@ SUMMARY is a dict containing test counters."
                         "")))))
 
 (defun emidje-echo-running-tests (op-alias args)
-  "Show a message indicating that tests will run.
+  "Show a message indicating that a test suite will run.
 OP-ALIAS is a keyword describing the current test operation.
 ARGS is an alist of parameters that will be sent in the nREPL request."
   (let* ((ns (plist-get args 'ns))
@@ -404,7 +405,7 @@ parameters to be sent to nREPL middleware."
                              (emidje-render-test-report results summary))))))
 
 (defun emidje-run-all-tests ()
-  "Run tests defined in all project namespaces."
+  "Run facts defined in all project namespaces."
   (interactive)
   (emidje-send-test-request :project))
 
@@ -416,7 +417,7 @@ parameters to be sent to nREPL middleware."
       (funcall emidje-infer-test-ns-function current-ns))))
 
 (defun emidje-run-ns-tests ()
-  "Run all tests in the current Clojure namespace context."
+  "Run all facts in the current Clojure namespace context."
   (interactive)
   (let ((namespace (emidje-current-test-ns)))
     (emidje-send-test-request :ns `(ns ,namespace))))
@@ -433,7 +434,7 @@ Test means facts, fact, tabular or any Clojure form containing any of those."
                                                   line ,line-number))))
 
 (defun emidje-re-run-non-passing-tests ()
-  "Re-run tests that didn't pass in the last execution."
+  "Re-run facts that didn't pass in the last execution."
   (interactive)
   (emidje-send-test-request :retest))
 
@@ -454,6 +455,7 @@ Return the formatted sexpr."
 (defun emidje-format-tabular ()
   "Format tabular fact at point."
   (interactive)
+  (ignore-errors (require 'cider-format))
   (save-excursion
     (mark-sexp)
     (cider--format-region (region-beginning) (region-end) #'emidje-send-format-request)))
