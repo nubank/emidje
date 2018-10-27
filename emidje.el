@@ -15,6 +15,9 @@
 
 (require 'ansi-color)
 (require 'cider)
+(ignore-errors
+  ;; For cider >= 0.18.x
+  (require 'cider-format))
 (require 'seq)
 
 (defface emidje-failure-face
@@ -455,7 +458,6 @@ Return the formatted sexpr."
 (defun emidje-format-tabular ()
   "Format tabular fact at point."
   (interactive)
-  (ignore-errors (require 'cider-format))
   (save-excursion
     (mark-sexp)
     (cider--format-region (region-beginning) (region-end) #'emidje-send-format-request)))
