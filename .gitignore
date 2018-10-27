@@ -3,6 +3,7 @@
 
 # Packaging
 .cask
+dist/
 
 # Backup files
 *~
