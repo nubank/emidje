@@ -15,6 +15,7 @@
 
 (require 'ansi-color)
 (require 'cider)
+(require 'seq)
 
 (defface emidje-failure-face
   '((((class color) (background light))
@@ -81,7 +82,7 @@ Apply the Leiningen convention of appending the suffix `-test' to CURRENT-NS."
   :package-version '(emidje . "0.1.0"))
 
 (defcustom emidje-show-full-test-summary t
-  "When set to t, Emidje shows a full test summary on the message buffer.
+  "When set to t, show a full test summary on the message buffer.
 Set to nil if you prefer to see a shorter version of test summaries."
   :type 'boolean
   :group 'emidje
@@ -93,7 +94,7 @@ Set to nil if you prefer to see a shorter version of test summaries."
   :group 'emidje
   :package-version '(emidje . "0.1.0"))
 
-(defconst emidje-evaluation-operations (list "eval" "load-file")
+(defconst emidje-evaluation-operations `("eval" "load-file")
   "List of nREPL operations that cause the evaluation of Clojure forms.")
 
 (defconst emidje-test-report-buffer "*midje-test-report*"
@@ -132,12 +133,21 @@ If RESPONSE contains the `error' status, delegate to `emidje-handle-error-respon
         (emidje-handle-error-response response)
       (apply handler-function (list response)))))
 
-(defun emidje-send-request (operation-type &optional params callback)
+(defun emidje-send-request (op-alias &optional args callback)
   "Send a request to nREPL middleware.
-Make an asynchronous request when CALLBACK is set and a synchronous one otherwise."
+All functions that interact with nREPL middleware must rely on
+this one, since it treats error responses appropriately.
+OP-ALIAS is a keyword representing the nREPL op (see
+`emidje-supported-operations').  ARGS is an alist of remaining
+parameters to be sent in the request.  Keys can be symbols that
+will be transformed into strings before sending the request.
+CALLBACK is a function that takes the nREPL response as its only
+argument.  When set, the request is sent asynchronously.  If
+omitted, the request is sent synchronously and the nREPL response
+is returned."
   (cider-ensure-connected)
-  (let* ((op (cdr (assq operation-type emidje-supported-operations)))
-         (message (thread-last (or params ())
+  (let* ((op (cdr (assq op-alias emidje-supported-operations)))
+         (message (thread-last (or args `())
                     (seq-map (lambda (value)
                                (if (symbolp value)
                                    (symbol-name value)
@@ -157,7 +167,8 @@ Make an asynchronous request when CALLBACK is set and a synchronous one otherwis
       (concat (match-string 1 version) "-" (upcase (match-string 2 version))))))
 
 (defun emidje-show-warning-on-repl (message &rest args)
-  "If `emidje-suppress-nrepl-middleware-warnings' isn't set to t, show the MESSAGE on the Cider's REPL buffer."
+  "Show the MESSAGE on the Cider's REPL buffer if applicable.
+ARGS are arbitrary values to be interpolated in the MESSAGE."
   (unless emidje-suppress-nrepl-middleware-warnings
     (cider-repl-emit-interactive-stderr
      (apply #'format (concat "WARNING: " message
@@ -179,20 +190,20 @@ Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
 (defun emidje-inject-nrepl-middleware ()
-  "Add midje-nrepl to the Cider's list of Lein plugins."
+  "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
   (when (and (boundp 'cider-jack-in-lein-plugins)
              emidje-inject-nrepl-middleware-at-jack-in)
     (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t)))
 
 ;;;###autoload
 (eval-after-load 'cider
-  '(emidje-inject-nrepl-middleware))
+  #'(emidje-inject-nrepl-middleware))
 
 (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version)
 
 (defun emidje-insert-section (content)
   "Insert CONTENT in the current buffer's position.
-Treat ansi colors appropriately."
+CONTENT is a string returned by nREPL middleware for the expected, actual and/or checker message sections."
   (let* ((begin (point))
          (lines (if (stringp content)
                     (split-string content "\n")
@@ -239,14 +250,14 @@ Treat ansi colors appropriately."
           (overlay-put (make-overlay begin (point)) 'font-lock-face bg))))))
 
 (defun emidje-count-non-passing-tests (results)
-  "Return the number of non-passing tests from the RESULTS dict."
+  "Return the number of non-passing tests from the RESULTS list."
   (seq-count (lambda (result)
                (let* ((type (nrepl-dict-get result "type")))
                  (or (equal type "error")
                      (equal type "fail")))) results))
 
 (defun emidje-get-displayable-results (results)
-  "Filter RESULTS by returning a new dict without passing tests."
+  "Filter RESULTS by returning a new list without passing tests."
   (seq-filter (lambda (result)
                 (not (equal (nrepl-dict-get result "type") "pass")))
               results))
@@ -264,21 +275,23 @@ Treat ansi colors appropriately."
                         (emidje-render-one-test-result result)))
                     ) results-dict))
 
-(defun emidje-render-list-of-namespaces (results)
+(defun emidje-render-list-of-namespaces (results-dict)
   "Render a list of tested namespaces in the current buffer.
-Propertize each namespace appropriately in order to allow users to jump to the file in question."
+Propertize each namespace appropriately in order to allow users
+to jump to the file in question.  RESULTS-DICT is a dictionary of
+namespaces to test results."
   (cl-flet ((file-path-for (namespace)
                            (thread-first results
                              (nrepl-dict-get namespace)
                              car
                              (nrepl-dict-get "file"))))
-    (dolist (namespace (nrepl-dict-keys results))
+    (dolist (namespace (nrepl-dict-keys results-dict))
       (insert (propertize (cider-propertize namespace 'ns)
                           'file (file-path-for namespace)) "\n")
       (insert "\n"))))
 
 (defun emidje-render-test-summary (summary)
-  "Render the test summary in the current buffer's position."
+  "Render the test SUMMARY in the current buffer's position."
   (nrepl-dbind-response summary (check error fact fail ns pass to-do)
     (insert (format "Checked %d namespaces\n" ns))
     (insert (format "Ran %d checks in %d facts\n" check fact))
@@ -298,13 +311,16 @@ Propertize each namespace appropriately in order to allow users to jump to the f
     (kill-buffer buffer)))
 
 (defun emidje-tests-passed-p (summary)
-  "Return t if all tests passed."
+  "Return t if all tests passed.
+SUMMARY is a dict."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
 (defun emidje-render-test-report (results summary)
   "Render the test report if there are erring and/or failing tests.
-If the tests were successful and there's a test report buffer rendered, kill it."
+If the tests were successful and there's a test report buffer rendered, kill it.
+RESULTS is a dict of namespaces to test results.
+SUMMARY is a dict containing test counters."
   (if (emidje-tests-passed-p summary)
       (emidje-kill-test-report-buffer)
     (with-current-buffer (or (get-buffer emidje-test-report-buffer)
@@ -318,10 +334,13 @@ If the tests were successful and there's a test report buffer rendered, kill it.
         (emidje-render-test-results results)
         (goto-char (point-min))))))
 
-(defun emidje-summarize-test-results (operation-type namespace summary)
-  "Return a string summarizing test results according to user's preferences."
+(defun emidje-summarize-test-results (op-alias namespace summary)
+  "Return a string summarizing test results according to user's preferences.
+OP-ALIAS is a keyword describing the current test operation.
+NAMESPACE is the ns under test (only relevant when OP-ALIAS is `:ns').
+SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (check fact error fail pass to-do)
-    (let ((possible-test-ns (if (equal operation-type :ns)
+    (let ((possible-test-ns (if (equal op-alias :ns)
                                 (format "%s: " namespace)
                               ""))
           (possible-future-facts (if (zerop to-do)
@@ -332,8 +351,11 @@ If the tests were successful and there's a test report buffer rendered, kill it.
        ((zerop (+ error fail)) (format "All checks (%d) succeeded." check))
        (t (format "%d checks failed, but %d succeeded." (+ error fail) pass))))))
 
-(defun emidje-echo-summary (operation-type namespace summary)
-  "Show a test summary on the message buffer."
+(defun emidje-echo-test-summary (op-alias namespace summary)
+  "Show a test summary on the message buffer.
+OP-ALIAS is a keyword describing the current test operation.
+NAMESPACE is the ns under test (only relevant when OP-ALIAS is `:ns').
+SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (check fail error)
     (if (and (zerop check) (zerop error))
         (message (propertize "No facts were checked. Is that what you wanted?"
@@ -343,9 +365,10 @@ If the tests were successful and there's a test report buffer rendered, kill it.
                    ((not (zerop fail)) 'emidje-failure-face)
                    (t 'emidje-success-face))))
         (message (propertize
-                  (emidje-summarize-test-results operation-type namespace summary) 'face face))))))
+                  (emidje-summarize-test-results op-alias namespace summary) 'face face))))))
 
 (defun emidje-read-test-description-at-point ()
+  "Return the fact description at point if one exists."
   (ignore-errors
     (save-excursion (down-list)
                     (forward-sexp 2)
@@ -354,23 +377,30 @@ If the tests were successful and there's a test report buffer rendered, kill it.
                           (format "\"%s\" " possible-description)
                         "")))))
 
-(defun emidje-echo-running-tests (op-type args)
+(defun emidje-echo-running-tests (op-alias args)
+  "Show a message indicating that tests will run.
+OP-ALIAS is a keyword describing the current test operation.
+ARGS is an alist of parameters that will be sent in the nREPL request."
   (let* ((ns (plist-get args 'ns))
          (test-description (emidje-read-test-description-at-point)))
-    (pcase op-type
+    (pcase op-alias
       (:project (message "Running tests in all project namespaces..."))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
 
-(defun emidje-send-test-request (operation-type &optional message)
-  "Send the test message asynchronously and show the test report when applicable."
-  (emidje-echo-running-tests operation-type message)
-  (emidje-send-request operation-type message
+(defun emidje-send-test-request (op-alias &optional message)
+  "Send the test request to nREPL middleware.
+Show the test report if applicable.  OP-ALIAS is a keyword
+describing the desired test operation (see
+`emidje-supported-operations').  MESSAGE is an alist of
+parameters to be sent to nREPL middleware."
+  (emidje-echo-running-tests op-alias message)
+  (emidje-send-request op-alias message
                        (lambda (response)
                          (nrepl-dbind-response response (results summary)
                            (when (and results summary)
-                             (emidje-echo-summary operation-type (plist-get message 'ns) summary)
+                             (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
                              (emidje-render-test-report results summary))))))
 
 (defun emidje-run-all-tests ()
@@ -415,7 +445,7 @@ Test means facts, fact, tabular or any Clojure form containing any of those."
     (user-error "No test report buffer")))
 
 (defun emidje-send-format-request (sexpr)
-  "Send a format request with the specified sexpr to nREPL middleware.
+  "Send a format request with the specified SEXPR to nREPL middleware.
 Return the formatted sexpr."
   (thread-first
       (emidje-send-request :format-tabular `(code ,sexpr))
@@ -429,7 +459,11 @@ Return the formatted sexpr."
     (cider--format-region (region-beginning) (region-end) #'emidje-send-format-request)))
 
 (defun emidje-instrumented-nrepl-send-request (original-function request &rest args)
-  "Instrument nrepl-send-request and nrepl-send-sync-request functions by appending the parameter load-tests? to the request when applicable."
+  "Instrument nrepl functions by appending the parameter load-tests? to request.
+ORIGINAL-FUNCTION is either `nrepl-send-request' or
+`nrepl-send-sync-request' functions.  REQUEST is the request list
+that will be sent to nREPL server.  ARGS are other arguments
+taken by aforementioned functions."
   (let* ((op (thread-last request
                (seq-drop-while (lambda (candidate)
                                  (not (equal candidate "op"))))
@@ -445,8 +479,9 @@ Return the formatted sexpr."
 (advice-add 'nrepl-send-sync-request :around #'emidje-instrumented-nrepl-send-request)
 
 (defun emidje-toggle-load-facts-on-eval (&optional globally)
-  "Toggles the value of emidje-load-facts-on-eval.
-When called with an interactive prefix argument, toggles the default value of this variable globally."
+  "Toggle the value of `emidje-load-facts-on-eval'.
+When called with the interactive prefix argument GLOBALLY,
+toggles the default value of this variable on all buffers."
   (interactive "P")
   (let ((switch (not emidje-load-facts-on-eval)))
     (if globally
@@ -459,6 +494,12 @@ When called with an interactive prefix argument, toggles the default value of th
              (if globally "globally" "locally"))))
 
 (defun emidje-search-test-result-change (position search-function predicate-function)
+  "Recursively search the next or previous change of text property `type'.
+POSITION is the current point's position.  SEARCH-FUNCTION is
+either `next-single-property-change' or
+`previous-single-property-change'.  PREDICATE-FUNCTION is a one
+argument function that returns t when the value of `type' matches
+some criteria."
   (let* ((position (funcall search-function position 'type))
          (test-result-type (when position
                              (get-text-property position 'type))))
@@ -468,6 +509,11 @@ When called with an interactive prefix argument, toggles the default value of th
      (t (emidje-search-test-result-change position search-function predicate-function)))))
 
 (defun emidje-move-point-to (direction test-result-type &optional friendly-result-name)
+  "Move point across results in the test report buffer.
+DIRECTION is the symbol 'next or 'previous.  TEST-RESULT-TYPE is
+a symbol indicating the type in question (e.g. 'error, 'fail or
+'result meaning any of those).  FRIENDLY-RESULT-NAME is an
+optional string that will be used in error messages."
   (with-current-buffer (get-buffer emidje-test-report-buffer)
     (let* ((search-function (if (equal direction 'next) #'next-single-property-change #'previous-single-property-change))
            (predicate-function (if (equal test-result-type 'result) (apply-partially 'identity) (apply-partially 'equal (symbol-name test-result-type))))
@@ -508,7 +554,7 @@ When called with an interactive prefix argument, toggles the default value of th
 
 (defun emidje-jump-to-definition (&optional other-window)
   "Jump to definition of namespace or test result at point.
-If called interactively with a prefix argument, visit the file in question in a new window."
+If called interactively with the prefix argument `OTHER-WINDOW', visit the file in question in a new window."
   (interactive "p")
   (let* ((file (or (get-text-property (point) 'file)
                    (user-error "Nothing to be visited here")))
@@ -519,7 +565,7 @@ If called interactively with a prefix argument, visit the file in question in a 
       (error "No source location"))))
 
 (defun emidje-show-test-stacktrace-at (ns index)
-  "Show the stacktrace for the error whose location within the report map is given by the ns and index."
+  "Show the stacktrace for the error whose location within the report map is given by the NS and INDEX."
   (let ((causes (list)))
     (emidje-send-request :test-stacktrace `(ns ,ns
                                                index ,index
