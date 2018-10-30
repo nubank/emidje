@@ -2,7 +2,7 @@
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
-;; Version: 0.1.0-SNAPSHOT
+;; Version: 0.1.0-BETA
 ;; Package-Requires: ((cider "0.17.0"))
 ;; Homepage: https://github.com/alan-ghelardi/emidje
 ;; Keywords: Cider, Clojure, Midje, tests
@@ -197,7 +197,7 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
   "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
   (when (and (boundp 'cider-jack-in-lein-plugins)
              emidje-inject-nrepl-middleware-at-jack-in)
-    (add-to-list 'cider-jack-in-lein-plugins `("midje-nrepl" ,(emidje-package-version)) t)))
+    (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-package-version)) t)))
 
 ;;;###autoload
 (eval-after-load 'cider
