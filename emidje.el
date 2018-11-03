@@ -4,7 +4,7 @@
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Version: 0.1.0-BETA
 ;; Package-Requires: ((cider "0.17.0"))
-;; Homepage: https://github.com/alan-ghelardi/emidje
+;; Homepage: https://github.com/nubank/emidje
 ;; Keywords: Cider, Clojure, Midje, tests
 
 ;;; Commentary:
