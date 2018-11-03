@@ -55,6 +55,35 @@ that those versions should be kept in sync to make sure that the `nREPL` client
 and the `nREPL` middleware are compatible (you will see a warning in the
 `Cider`'s `REPL` when those versions don't match).
 
+### Starting the REPL and loading facts
+
+By default `Emidje` prevents `Midje` facts from being run when a given test
+namespace is loaded. This means that `Midje` facts will no longer be checked
+during the `REPL` startup or as a side effect of commands like `cider-eval-x`,
+`cider-load-buffer`, `cider-refresh`, etc. This behavior is extremely useful,
+mainly on huge projects with heavy and slow integration tests, because it make
+the `REPL` startup faster and more reliable. But, if you are acquainted to run
+`Midje` facts with `M-x cider-load-buffer` (`C-c C-k`), be aware that by default
+this will no longer work with `Emidje`. This should not be a problem since one
+of the core features of `Emidje` is a set of keybindings to run facts. However,
+if you want to check facts on commands that load a namespace or a given `sexpr`,
+type `M-x emidje-toggle-load-facts-on-eval` to disable this behavior on the
+current buffer or `C-u M-x emidje-toggle-load-facts-on-eval` to disable it
+globally. Alternatively, you can disable this feature entirely in your `init.el`
+as follows:
+
+```el
+(setq-default emidje-load-facts-on-eval nil)
+```
+
+### Running tests
+
+### Formatting tabular facts
+
+### Customizing
+
+Type `M-x customize-group [emidje]` to see a complete list of `Emidje` variables
+that can be tweaked.
 ## License
 Copyright © 2018 Nubank
 
