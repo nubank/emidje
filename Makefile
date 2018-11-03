@@ -1,15 +1,17 @@
 project = emidje
-elisp_files := $(wildcard *.el)
-linting_files := $(filter-out %-autoloads.el,$(elisp_files))
+elisp_files = $(wildcard *.el)
+linting_files = $(filter-out %-autoloads.el,$(elisp_files))
 autoload_files = $(wildcard *autoloads.el*)
 objects = $(wildcard *elc)
 
-install:
+.cask:
 	@echo "Installing project dependencies..."
 	@cask install
 	@echo "Done"
 
-lint:
+install: .cask
+
+lint: install
 	@echo "Linting elisp files with elisp-lint..."
 	@cask exec emacs -Q \
 		--batch -l elisp-lint.el \
@@ -32,7 +34,7 @@ package: autoloads
 
 clean:
 	@echo "Cleaning project directory..."
-	@rm $(autoload_files) $(objects)
+	@rm -f $(autoload_files) $(objects)
 	@echo "Done"
 
 elpa-clean: clean
