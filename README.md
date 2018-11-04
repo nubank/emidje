@@ -119,6 +119,10 @@ be formatted as a centered table.
 Type `M-x customize-group [emidje]` to see a complete list of `Emidje` variables
 that can be tweaked.
 
+## Changelog
+
+An extensive changelog is available [here](CHANGELOG.md).
+
 ## License
 Copyright © 2018 Nubank
 
