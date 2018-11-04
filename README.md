@@ -78,12 +78,47 @@ as follows:
 
 ### Running tests
 
+Press `C-c C-j n` from a source buffer or `REPL` to run all tests related to the
+namespace where you are currently in. As `cider-test.el` does, `Emidje` employs
+a customizable inference logic to figure out the test namespace that correspond
+to the namespace where you are working on. This means that you can run all tests
+defined in a given namespace without switching directly to it. Simply press the
+aforementioned keys from the implementation namespace and `Emidje` will check
+its facts.
+
+Press `C-c C-j p` to run all tests defined in the project. The combination `C-c
+C-j r` can be used to re-run tests that didn't pass in the last execution. Use
+`C-c C-j t` to run the test at point.
+
+### Interacting with reports
+
+Test results are displayed in the `*midje-test-report*` buffer. You can switch
+to this buffer by pressing `C-c C-j s` from a `clojure` namespace or from the
+`REPL`. Once in this buffer, you can navigate across test results, jump to test
+definitions, show stacktraces, etc. Follows a list of keybindings that you have
+at your disposal:
+
+| Keybinding | Description |
+| --------------- | --------------------------------------------- |
+| `e` | Show test error and stacktrace |
+| `RET` or `M-.` | Jump to namespace or test definition at point |
+| `n-r` | Move point to next test result |
+| `p-r` | Move point to previous test result |
+| `n-e` | Move point to next error |
+| `p-e` | Move point to previous error |
+| `n-f` | Move point to next failure |
+| `p-f` | Move point to previous failure |
+
 ### Formatting tabular facts
+
+Move point to the begining of a `tabular` fact and press `C-c C-j f` and it will
+be formatted as a centered table.
 
 ### Customizing
 
 Type `M-x customize-group [emidje]` to see a complete list of `Emidje` variables
 that can be tweaked.
+
 ## License
 Copyright © 2018 Nubank
 
