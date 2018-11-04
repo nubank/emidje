@@ -588,17 +588,19 @@ If called interactively with the prefix argument `OTHER-WINDOW', visit the file 
         (error (get-text-property (point) 'error)))
     (if (and error ns index)
         (emidje-show-test-stacktrace-at ns index)
-      (message "No test error at point"))))
+      (user-error "No test error at point"))))
 
 (defvar emidje-report-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "e") #'emidje-show-test-stacktrace)
+    (define-key map (kbd "RET") #'emidje-jump-to-definition)
+    (define-key map (kbd "M-.") #'emidje-jump-to-definition)
     (define-key map (kbd "n r") #'emidje-next-result)
     (define-key map (kbd "p r") #'emidje-previous-result)
     (define-key map (kbd "n e") #'emidje-next-error)
     (define-key map (kbd "p e") #'emidje-previous-error)
     (define-key map (kbd "n f") #'emidje-next-failure)
     (define-key map (kbd "p f") #'emidje-previous-failure)
-    (define-key map (kbd "RET") #'emidje-jump-to-definition)
     map))
 
 (defvar emidje-commands-map
