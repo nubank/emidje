@@ -13,8 +13,8 @@ Test runner, report viewer and formatting tool for Midje within Emacs.
 `Emidje` extends [Cider](cider) to provide support for [Midje](midje) tests in a
 similar fashion as
 [cider-test.el](https://github.com/clojure-emacs/cider/blob/master/cider-test.el)
-does for Clojure tests. In fact, most of `Emidje` functionalities were strongly
-inspired on `cider-test.el` features.
+does for `clojure.test` tests. In fact, most of `Emidje` functionalities were
+strongly inspired on `cider-test.el` features.
 
 When installed, `Emidje` exposes the `emidje-mode`, an Emacs minor-mode that
 complements `clojure-mode` and `cider-repl-mode` by providing a set of
@@ -61,16 +61,16 @@ By default `Emidje` prevents `Midje` facts from being run when a given test
 namespace is loaded. This means that `Midje` facts will no longer be checked
 during the `REPL` startup or as a side effect of commands like `cider-eval-x`,
 `cider-load-buffer`, `cider-refresh`, etc. This behavior is extremely useful,
-mainly on huge projects with heavy and slow integration tests, because it make
+mainly on huge projects with heavy and slow integration tests, because it makes
 the `REPL` startup faster and more reliable. But, if you are acquainted to run
 `Midje` facts with `M-x cider-load-buffer` (`C-c C-k`), be aware that by default
 this will no longer work with `Emidje`. This should not be a problem since one
-of the core features of `Emidje` is a set of keybindings to run facts. However,
-if you want to check facts on commands that load a namespace or a given `sexpr`,
-type `M-x emidje-toggle-load-facts-on-eval` to disable this behavior on the
-current buffer or `C-u M-x emidje-toggle-load-facts-on-eval` to disable it
-globally. Alternatively, you can disable this feature entirely in your `init.el`
-as follows:
+of the core features of `Emidje` is a set of keybindings to run facts (more
+about that below). However, if you want to check facts on commands that load a
+namespace or a given `sexpr`, type `M-x emidje-toggle-load-facts-on-eval` to
+disable this behavior on the current buffer or `C-u M-x
+emidje-toggle-load-facts-on-eval` to disable it globally. Alternatively, you can
+disable this feature entirely in your `init.el` as follows:
 
 ```el
 (setq-default emidje-load-facts-on-eval nil)
@@ -80,7 +80,7 @@ as follows:
 
 Press `C-c C-j n` from a source buffer or `REPL` to run all tests related to the
 namespace where you are currently in. As `cider-test.el` does, `Emidje` employs
-a customizable inference logic to figure out the test namespace that correspond
+a customizable inference logic to figure out the test namespace that corresponds
 to the namespace where you are working on. This means that you can run all tests
 defined in a given namespace without switching directly to it. Simply press the
 aforementioned keys from the implementation namespace and `Emidje` will check
@@ -112,7 +112,7 @@ at your disposal:
 ### Formatting tabular facts
 
 Move point to the begining of a `tabular` fact and press `C-c C-j f` and it will
-be formatted as a centered table.
+be formatted as a right aligned table.
 
 ### Customizing
 
