@@ -1,11 +1,8 @@
 (source gnu)
 (source melpa)
 
-(package-file "elisp/emidje.el")
+(package-file "emidje.el")
 
 (development
- (depends-on "f")
- (depends-on "cider")
- (depends-on "ecukes")
- (depends-on "ert-runner")
- (depends-on "el-mock"))
+(depends-on "ecukes")
+(depends-on "elisp-lint"))
