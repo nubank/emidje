@@ -1,8 +1,8 @@
-;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
+;;; emidje.el --- Test runner, report viewer and formatting tool for Midje -*- lexical-binding: t -*-
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
-;; Version: 0.1.0-BETA
+;; Version: 1.0.0
 ;; Package-Requires: ((cider "0.17.0"))
 ;; Homepage: https://github.com/nubank/emidje
 ;; Keywords: Cider, Clojure, Midje, tests
@@ -12,6 +12,12 @@
 ;; Emidje is a Cider plugin that provides support to run Midje tests within Emacs.
 
 ;;; Code:
+
+(defgroup emidje nil
+  "Test runner, report viewer and formatting tool for Midje."
+  :prefix "emidje-"
+  :group 'applications
+  :link '(url-link :tag "GitHub" "https://github.com/nubank/emidje"))
 
 (require 'ansi-color)
 (require 'cider)
@@ -27,7 +33,7 @@
      :background "firebrick"))
   "Face for failed tests."
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defface emidje-error-face
   '((((class color) (background light))
@@ -36,7 +42,7 @@
      :background "orange4"))
   "Face for erring tests."
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defface emidje-success-face
   '((((class color) (background light))
@@ -47,7 +53,7 @@
      :background "green"))
   "Face for passing tests."
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defface emidje-work-todo-face
   '((((class color) (background light))
@@ -56,19 +62,19 @@
      :background "yellow4"))
   "Face for future facts."
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defcustom emidje-inject-nrepl-middleware-at-jack-in t
   "When nil, do not inject `midje-nrepl' at `cider-jack-in' time."
   :group 'emidje
   :type 'boolean
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defcustom emidje-infer-test-ns-function 'emidje-default-infer-test-ns-function
   "Function to infer the test namespace."
   :type 'symbol
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defun emidje-default-infer-test-ns-function (current-ns)
   "Default function for inferring the namespace to be tested.
@@ -82,20 +88,20 @@ Apply the Leiningen convention of appending the suffix `-test' to CURRENT-NS."
   "When set to nil, Midje facts won't be loaded on operations that cause the evaluation of Clojure forms like `eval' and `load-file'."
   :type 'boolean
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defcustom emidje-show-full-test-summary t
   "When set to t, show a full test summary on the message buffer.
 Set to nil if you prefer to see a shorter version of test summaries."
   :type 'boolean
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defcustom emidje-suppress-nrepl-middleware-warnings nil
   "When set to t, no nREPL middleware warnings are shown on the REPL."
   :type 'boolean
   :group 'emidje
-  :package-version '(emidje . "0.1.0"))
+  :package-version '(emidje . "1.0.0"))
 
 (defconst emidje-evaluation-operations `("eval" "load-file")
   "List of nREPL operations that cause the evaluation of Clojure forms.")
@@ -163,7 +169,7 @@ is returned."
 
 (defun emidje-package-version ()
   "Get Emidje's current version from the package header."
-  (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.*\\)$")
+  (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.+\\)$")
         (version (pkg-info-version-info 'emidje)))
     (if (not (string-match version-regex version))
         version
