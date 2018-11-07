@@ -1,16 +1,8 @@
-[![cider]](https://github.com/clojure-emacs/cider)
-[![clj-refactor]](https://github.com/clojure-emacs/clj-refactor.el)
-[![melpa](http://melpa.org/packages/clj-refactor-badge.svg)](http://melpa.org/#/clj-refactor)
-[![melpa-stable](http://stable.melpa.org/packages/clj-refactor-badge.svg)](http://stable.melpa.org/#/clj-refactor)
-[! [midje]](https://github.com/marick/Midje)
-[![midje-nrepl]](https://github.com/nubank/midje-nrepl)
-[![nrepl]](https://github.com/nrepl/nrepl)
-
 # Emidje
 
 Test runner, report viewer and formatting tool for Midje within Emacs.
 
-`Emidje` extends [Cider](cider) to provide support for [Midje](midje) tests in a
+`Emidje` extends [Cider][cider] to provide support for [Midje][midje] tests in a
 similar fashion as
 [cider-test.el](https://github.com/clojure-emacs/cider/blob/master/cider-test.el)
 does for `clojure.test` tests. In fact, most of `Emidje` functionalities were
@@ -22,7 +14,7 @@ keybindings to interact with `Midje` facts in a more pleasant way.
 
 ## Installation
 
-`Emidje` is available on [Melpa](melpa) and [Melpa stable](melpa-stable), two
+`Emidje` is available on [Melpa][melpa] and [Melpa stable][melpa-stable], two
 major `package.el` community maintained repositories. Soon, the most recommended
 way of installing `Emidje` is through `package.el`, the native Emacs's package
 manager.
@@ -35,9 +27,9 @@ M-x package-install [RET] emidje [RET]
 
 ## Usage
 
-`Emidje` is a [nREPL](nrepl) client for [midje-nrepl](midje-nrepl). Therefore,
+`Emidje` is a [nREPL][nrepl] client for [midje-nrepl][midje-nrepl]. Therefore,
 the later must be available in the classpath of your project (see
-[midje-nrepl](midje-nrepl)'s documentation for more details).
+[midje-nrepl][midje-nrepl]'s documentation for more details).
 
 If you start a `REPL` via `M-x cider-jack-in`, you don't need anything else;
 `Emidje` will take care of injecting the correct version of `midje-nrepl` in
@@ -127,3 +119,10 @@ An extensive changelog is available [here](CHANGELOG.md).
 Copyright © 2018 Nubank
 
 Distributed under the Apache License, Version 2.0
+
+[cider]: https://github.com/clojure-emacs/cider
+[melpa]: https://melpa.org/
+[melpa-stable]: https://stable.melpa.org/
+[midje]: https://github.com/marick/Midje
+[midje-nrepl]: https://github.com/nubank/midje-nrepl
+[nrepl]: https://github.com/nrepl/nrepl
