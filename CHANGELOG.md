@@ -7,6 +7,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-* Initial version.
+### Added
+
+- Initial version with a set of features for running Midje tests, viewing
+  reports and formatting tabular facts within Emacs.
 
 [Unreleased]: https://github.com/nubank/emidje/compare/1.0.0...HEAD
