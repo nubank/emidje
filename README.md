@@ -1,11 +1,3 @@
-[![cider]](https://github.com/clojure-emacs/cider)
-[![clj-refactor]](https://github.com/clojure-emacs/clj-refactor.el)
-[![melpa](http://melpa.org/packages/clj-refactor-badge.svg)](http://melpa.org/#/clj-refactor)
-[![melpa-stable](http://stable.melpa.org/packages/clj-refactor-badge.svg)](http://stable.melpa.org/#/clj-refactor)
-[! [midje]](https://github.com/marick/Midje)
-[![midje-nrepl]](https://github.com/nubank/midje-nrepl)
-[![nrepl]](https://github.com/nrepl/nrepl)
-
 # Emidje
 
 Test runner, report viewer and formatting tool for Midje within Emacs.
@@ -127,3 +119,11 @@ An extensive changelog is available [here](CHANGELOG.md).
 Copyright © 2018 Nubank
 
 Distributed under the Apache License, Version 2.0
+
+[cider]: https://github.com/clojure-emacs/cider
+[clj-refactor]: https://github.com/clojure-emacs/clj-refactor.el
+[melpa]: http://melpa.org/packages/clj-refactor-badge.svg]: http://melpa.org/#/clj-refactor
+[melpa-stable]: http://stable.melpa.org/packages/clj-refactor-badge.svg]: http://stable.melpa.org/#/clj-refactor
+[! [midje]: https://github.com/marick/Midje
+[midje-nrepl]: https://github.com/nubank/midje-nrepl
+[nrepl]: https://github.com/nrepl/nrepl
