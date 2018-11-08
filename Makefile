@@ -3,6 +3,7 @@ elisp_files = $(wildcard *.el)
 linting_files = $(filter-out %-autoloads.el,$(elisp_files))
 autoload_files = $(wildcard *autoloads.el*)
 objects = $(wildcard *elc)
+package = $(wildcard dist/emidje-*.tar)
 
 .cask:
 	@echo "Installing project dependencies..."
@@ -42,4 +43,12 @@ clean-all: clean
 	@rm -rf .cask
 	@echo "Cleaning dist directory..."
 	@rm -rf dist
+	@echo "Done"
+
+install-package:
+	@echo "Installing $(package)..."
+	@cask exec emacs -Q --batch \
+		-l package.el \
+		--eval "(prog2 (package-initialize) \
+			(package-install-file \"$(shell pwd)/$(package)\"))"
 	@echo "Done"
