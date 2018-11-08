@@ -3,7 +3,10 @@ elisp_files = $(wildcard *.el)
 linting_files = $(filter-out %-autoloads.el,$(elisp_files))
 autoload_files = $(wildcard *autoloads.el*)
 objects = $(wildcard *elc)
-package = $(wildcard dist/emidje-*.tar)
+version = $(shell cask version)
+dist = dist/emidje-$(version)
+package = $(wildcard $(dist)/emidje-*.tar)
+releasable := $(wildcard dist/emidje-*.tar.gz)
 
 .cask:
 	@echo "Installing project dependencies..."
@@ -30,7 +33,24 @@ autoloads:
 
 package: autoloads
 	@echo "Packaging $(project) $(shell cask version)..."
-	@cask package
+	@mkdir -p $(dist)
+	@cask package $(dist)
+	@echo "Done"
+
+install-package: package
+	@echo "Installing $(package)..."
+	@cask exec emacs -Q --batch \
+		-l package.el \
+		--eval "(prog2 (package-initialize) \
+			(package-install-file \"$(shell pwd)/$(package)\"))"
+	@echo "Done"
+
+release: lint package
+	@echo "Releasing Emidje version $(version)..."
+	@git tag $(version) && \
+		git push origin $(version) && \
+		cd dist; tar -zcvf emidje-$(version).tar.gz emidje-$(version) && \
+		hub -a $(releasable) $(version)
 	@echo "Done"
 
 clean:
@@ -43,12 +63,4 @@ clean-all: clean
 	@rm -rf .cask
 	@echo "Cleaning dist directory..."
 	@rm -rf dist
-	@echo "Done"
-
-install-package:
-	@echo "Installing $(package)..."
-	@cask exec emacs -Q --batch \
-		-l package.el \
-		--eval "(prog2 (package-initialize) \
-			(package-install-file \"$(shell pwd)/$(package)\"))"
 	@echo "Done"
