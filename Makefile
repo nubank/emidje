@@ -37,7 +37,9 @@ clean:
 	@rm -f $(autoload_files) $(objects)
 	@echo "Done"
 
-elpa-clean: clean
+clean-all: clean
 	@echo "Cleaning .cask directory..."
 	@rm -rf .cask
+	@echo "Cleaning dist directory..."
+	@rm -rf dist
 	@echo "Done"
