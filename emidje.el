@@ -167,10 +167,10 @@ is returned."
       (thread-last (cider-nrepl-send-sync-request message)
         (emidje-handle-nrepl-response #'identity)))))
 
-(defun emidje-package-version ()
+(defun emidje-version ()
   "Get Emidje's current version from the package header."
   (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.+\\)$")
-        (version (pkg-info-version-info 'emidje)))
+        (version (car (split-string (pkg-info-version-info 'emidje)))))
     (if (not (string-match version-regex version))
         version
       (concat (match-string 1 version) "-" (upcase (match-string 2 version))))))
@@ -187,7 +187,7 @@ ARGS are arbitrary values to be interpolated in the MESSAGE."
 (defun emidje-check-nrepl-middleware-version ()
   "Check whether `emidje' and `midje-nrepl' versions are in sync.
 Show warning messages on Cider's REPL when applicable."
-  (let ((emidje-version (emidje-package-version))
+  (let ((emidje-version (emidje-version))
         (midje-nrepl-version (nrepl-dict-get-in (emidje-send-request :version) `("midje-nrepl" "version-string"))))
     (cond
      ((not midje-nrepl-version)
@@ -203,7 +203,7 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
   "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
   (when (and (boundp 'cider-jack-in-lein-plugins)
              emidje-inject-nrepl-middleware-at-jack-in)
-    (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-package-version)) t)))
+    (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-version)) t)))
 
 ;;;###autoload
 (eval-after-load 'cider
