@@ -192,7 +192,7 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
 
 ;;;###autoload
 (eval-after-load 'cider
-  #'(emidje-inject-nrepl-middleware))
+  #'emidje-inject-nrepl-middleware)
 
 (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version)
 
@@ -612,6 +612,7 @@ If called interactively with the prefix argument `OTHER-WINDOW', visit the file 
     (setq-local truncate-lines t))
   (setq-local electric-indent-chars nil))
 
+;;;###autoload
 (define-minor-mode emidje-mode
   "Provides a set of keybindings for interacting with Midje tests.
 
@@ -623,11 +624,13 @@ enable the mode if ARG is omitted or nil.
   :lighter "emidje"
   :keymap emidje-commands-map)
 
-(when (fboundp 'clojure-mode)
-  (add-hook 'clojure-mode-hook #'emidje-mode t))
-
-(when (fboundp 'cider-repl-mode)
-  (add-hook 'cider-repl-mode-hook #'emidje-mode t))
+;;;###autoload
+(defun emidje-setup ()
+  "Convenience function for setting up `emidje'."
+  (when (fboundp 'clojure-mode)
+    (add-hook 'clojure-mode-hook #'emidje-mode t))
+  (when (fboundp 'cider-repl-mode)
+    (add-hook 'cider-repl-mode-hook #'emidje-mode t)))
 
 (provide 'emidje)
 
