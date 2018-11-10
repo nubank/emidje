@@ -1,11 +1,11 @@
-;;; emidje.el --- Test runner, report viewer and formatting tool for Midje -*- lexical-binding: t -*-
+;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Version: 1.0.0
 ;; Package-Requires: ((emacs "25") (cider "0.17.0"))
 ;; Homepage: https://github.com/nubank/emidje
-;; Keywords: Cider, Clojure, Midje, tests
+;; Keywords: tools
 
 ;;; Commentary:
 
