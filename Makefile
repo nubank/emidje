@@ -14,10 +14,18 @@ install: .cask
 
 lint: install
 	@echo "Linting elisp files with elisp-lint..."
-	@cask exec emacs -Q \
-		--batch -l elisp-lint.el \
+	@cask exec emacs -Q --batch \
+		-l elisp-lint.el \
 		-f elisp-lint-files-batch \
 		$(linting_files)
+	@echo "Linting elisp files with package-lint..."
+	@cask exec emacs -Q -batch \
+		--eval "(progn (require 'package) \
+			(push '(\"melpa\" . \"http://melpa.org/packages/\") package-archives) \
+			(package-initialize))" \
+	-l package-lint.el \
+	-f package-lint-batch-and-exit \
+	$(linting_files)
 	@echo "Done"
 
 autoloads:
