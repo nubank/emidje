@@ -25,6 +25,26 @@ You can install `Emidje` by typing the following command:
 M-x package-install [RET] emidje [RET]
 ```
 
+After installing `emidje`, add the following line to your `init.el` file in
+order to activate the `emidje-mode` whenever you visit a `Clojure` file or
+switch to the `Cider's REPL` buffer:
+
+```el
+(emidje-setup)
+```
+
+Alternatively, you can write your own function to add `emidje-mode` to the
+desired hooks:
+
+```el
+(defun my-clojure-hook ()
+"Enable some minor modes to enhance Clojure development."
+  (clj-refactor-mode)
+  (emidje-mode))
+
+(add-hook 'clojure-mode-hook #'my-clojure-hook)
+```
+
 ## Usage
 
 `Emidje` is a [nREPL][nrepl] client for [midje-nrepl][midje-nrepl]. Therefore,
