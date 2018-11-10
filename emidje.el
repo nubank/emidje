@@ -1,5 +1,6 @@
 ;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
 
+;; Copyright © 2018 Nubank
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Version: 1.0.0
