@@ -12,7 +12,7 @@ When installed, `Emidje` exposes the `emidje-mode`, an Emacs minor-mode that
 complements `clojure-mode` and `cider-repl-mode` by providing a set of
 keybindings to interact with `Midje` facts in a more pleasant way.
 
-## [Installation]
+## Installation
 
 `Emidje` is available on [Melpa][melpa] and [Melpa stable][melpa-stable], two
 major `package.el` community maintained repositories. Soon, the most recommended
@@ -54,7 +54,7 @@ the later must be available in the classpath of your project (see
 
 If you start a `REPL` via `M-x cider-jack-in`, you don't need anything else;
 `Emidje` will take care of injecting the correct version of `midje-nrepl` in
-your `REPL` through `Cider` facilities (see [installation][Installation]). However, if you are connecting to a
+your `REPL` through `Cider` facilities (see [installation](Installation)). However, if you are connecting to a
 running `nREPL` process, you need to add `midje-nrepl` manually either to your
 project's `project.clj`, or in the `:user` profile found at
 `~/.lein/profiles.clj`:
