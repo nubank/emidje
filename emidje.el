@@ -184,7 +184,6 @@ Show warning messages on Cider's REPL when applicable."
 Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
-;;;###autoload
 (defun emidje-inject-nrepl-middleware ()
   "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
   (when (and (boundp 'cider-jack-in-lein-plugins)
@@ -192,10 +191,13 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
     (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-version)) t)))
 
 ;;;###autoload
-(eval-after-load 'cider
-  #'emidje-inject-nrepl-middleware)
-
-(add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version)
+(defun emidje-enable-nrepl-middleware ()
+  "Enable `midje-nrepl' middleware as a `Cider' dependency.
+Call this function in your `init.el' to enable the automatic
+injection of the nREPL middleware in the `cider-jack-in'
+command.  See also: `emidje-setup'."
+  (emidje-inject-nrepl-middleware)
+  (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
 (defun emidje-insert-section (content)
   "Insert CONTENT in the current buffer's position.
@@ -615,7 +617,7 @@ If called interactively with the prefix argument `OTHER-WINDOW', visit the file 
 
 ;;;###autoload
 (define-minor-mode emidje-mode
-  "Provides a set of keybindings for interacting with Midje tests.
+  "Provide a set of keybindings for interacting with Midje tests.
 
 With a prefix argument ARG, enable emidje-mode if ARG
 is positive, and disable it otherwise.  If called from Lisp,
@@ -627,11 +629,11 @@ enable the mode if ARG is omitted or nil.
 
 ;;;###autoload
 (defun emidje-setup ()
-  "Convenience function for setting up `emidje'."
-  (when (fboundp 'clojure-mode)
-    (add-hook 'clojure-mode-hook #'emidje-mode t))
-  (when (fboundp 'cider-repl-mode)
-    (add-hook 'cider-repl-mode-hook #'emidje-mode t)))
+  "Setup `emidje-mode' and enable the `midje-nrepl' middleware conveniently."
+  (eval-after-load 'cider
+    #'emidje-enable-nrepl-middleware)
+  (add-hook 'clojure-mode-hook #'emidje-mode t)
+  (add-hook 'cider-repl-mode-hook #'emidje-mode t))
 
 (provide 'emidje)
 
