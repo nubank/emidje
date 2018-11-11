@@ -25,6 +25,27 @@ You can install `Emidje` by typing the following command:
 M-x package-install [RET] emidje [RET]
 ```
 
+After installing `emidje`, add the following line to your `init.el` file in
+order to enable the automatic injection of the nREPL middleware and activate the `emidje-mode` whenever you visit a `Clojure` file or
+switch to the `Cider's REPL` buffer:
+
+```el
+(emidje-setup)
+```
+
+Alternatively, you can write your own function to add `emidje-mode` to the
+desired hooks:
+
+```el
+(defun my-clojure-hook ()
+"Enable some minor modes to enhance Clojure development."
+  (clj-refactor-mode)
+  (emidje-mode))
+(eval-after-load 'cider
+    #'emidje-enable-nrepl-middleware)
+(add-hook 'clojure-mode-hook #'my-clojure-hook)
+```
+
 ## Usage
 
 `Emidje` is a [nREPL][nrepl] client for [midje-nrepl][midje-nrepl]. Therefore,
@@ -33,7 +54,7 @@ the later must be available in the classpath of your project (see
 
 If you start a `REPL` via `M-x cider-jack-in`, you don't need anything else;
 `Emidje` will take care of injecting the correct version of `midje-nrepl` in
-your `REPL` through `Cider` facilities. However, if you are connecting to a
+your `REPL` through `Cider` facilities (see [installation](#Installation)). However, if you are connecting to a
 running `nREPL` process, you need to add `midje-nrepl` manually either to your
 project's `project.clj`, or in the `:user` profile found at
 `~/.lein/profiles.clj`:

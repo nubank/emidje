@@ -1,11 +1,12 @@
-;;; emidje.el --- Test runner, report viewer and formatting tool for Midje -*- lexical-binding: t -*-
+;;; emidje.el --- Test runner and report viewer for Midje -*- lexical-binding: t -*-
 
+;; Copyright © 2018 Nubank
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Version: 1.0.0
-;; Package-Requires: ((cider "0.17.0"))
+;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16"))
 ;; Homepage: https://github.com/nubank/emidje
-;; Keywords: Cider, Clojure, Midje, tests
+;; Keywords: tools
 
 ;;; Commentary:
 
@@ -26,40 +27,25 @@
   (require 'cider-format))
 (require 'seq)
 
-(defface emidje-failure-face
-  '((((class color) (background light))
-     :background "orange red")
-    (((class color) (background dark))
-     :background "firebrick"))
+(defface emidje-failure
+  '((t (:inherit error)))
   "Face for failed tests."
   :group 'emidje
   :package-version '(emidje . "1.0.0"))
 
-(defface emidje-error-face
-  '((((class color) (background light))
-     :background "orange1")
-    (((class color) (background dark))
-     :background "orange4"))
-  "Face for erring tests."
+(defface emidje-error
+  '((t (:inherit error)))"Face for erring tests."
   :group 'emidje
   :package-version '(emidje . "1.0.0"))
 
-(defface emidje-success-face
-  '((((class color) (background light))
-     :foreground "black"
-     :background "green")
-    (((class color) (background dark))
-     :foreground "black"
-     :background "green"))
+(defface emidje-success
+  '((t (:inherit success)))
   "Face for passing tests."
   :group 'emidje
   :package-version '(emidje . "1.0.0"))
 
-(defface emidje-work-todo-face
-  '((((class color) (background light))
-     :background "yellow1")
-    (((class color) (background dark))
-     :background "yellow4"))
+(defface emidje-work-todo
+  '((t (:inherit warning)))
   "Face for future facts."
   :group 'emidje
   :package-version '(emidje . "1.0.0"))
@@ -198,7 +184,6 @@ Show warning messages on Cider's REPL when applicable."
 Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
-;;;###autoload
 (defun emidje-inject-nrepl-middleware ()
   "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
   (when (and (boundp 'cider-jack-in-lein-plugins)
@@ -206,10 +191,13 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
     (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-version)) t)))
 
 ;;;###autoload
-(eval-after-load 'cider
-  #'(emidje-inject-nrepl-middleware))
-
-(add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version)
+(defun emidje-enable-nrepl-middleware ()
+  "Enable `midje-nrepl' middleware as a `Cider' dependency.
+Call this function in your `init.el' to enable the automatic
+injection of the nREPL middleware in the `cider-jack-in'
+command.  See also: `emidje-setup'."
+  (emidje-inject-nrepl-middleware)
+  (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
 (defun emidje-insert-section (content)
   "Insert CONTENT in the current buffer's position.
@@ -234,7 +222,7 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
               (type-face (cider-test-type-simple-face type))
               (bg `(:background ,cider-test-items-background-color)))
           (if (equal type "to-do")
-              (cider-insert "Work To Do " 'emidje-work-todo-face nil)
+              (cider-insert "Work To Do " 'emidje-work-todo nil)
             (cider-insert (capitalize type) type-face nil " in "))
           (dolist (text context)
             (cider-insert text 'font-lock-doc-face t))
@@ -306,13 +294,13 @@ namespaces to test results."
     (insert (format "Checked %d namespaces\n" ns))
     (insert (format "Ran %d checks in %d facts\n" check fact))
     (unless (zerop fail)
-      (cider-insert (format "%d failures" fail) 'emidje-failure-face t))
+      (cider-insert (format "%d failures" fail) 'emidje-failure t))
     (unless (zerop error)
-      (cider-insert (format "%d errors" error) 'emidje-error-face t))
+      (cider-insert (format "%d errors" error) 'emidje-error t))
     (unless (zerop to-do)
-      (cider-insert (format "%d to do" to-do) 'emidje-work-todo-face t))
+      (cider-insert (format "%d to do" to-do) 'emidje-work-todo t))
     (when (zerop (+ fail error))
-      (cider-insert (format "%d passed" pass) 'emidje-success-face t))
+      (cider-insert (format "%d passed" pass) 'emidje-success t))
     (insert "\n")))
 
 (defun emidje-kill-test-report-buffer ()
@@ -369,11 +357,11 @@ SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (check fail error)
     (if (and (zerop check) (zerop error))
         (message (propertize "No facts were checked. Is that what you wanted?"
-                             'face 'emidje-error-face))
+                             'face 'emidje-error))
       (let ((face (cond
-                   ((not (zerop error)) 'emidje-error-face)
-                   ((not (zerop fail)) 'emidje-failure-face)
-                   (t 'emidje-success-face))))
+                   ((not (zerop error)) 'emidje-error)
+                   ((not (zerop fail)) 'emidje-failure)
+                   (t 'emidje-success))))
         (message (propertize
                   (emidje-summarize-test-results op-alias namespace summary) 'face face))))))
 
@@ -627,8 +615,9 @@ If called interactively with the prefix argument `OTHER-WINDOW', visit the file 
     (setq-local truncate-lines t))
   (setq-local electric-indent-chars nil))
 
+;;;###autoload
 (define-minor-mode emidje-mode
-  "Provides a set of keybindings for interacting with Midje tests.
+  "Provide a set of keybindings for interacting with Midje tests.
 
 With a prefix argument ARG, enable emidje-mode if ARG
 is positive, and disable it otherwise.  If called from Lisp,
@@ -638,10 +627,12 @@ enable the mode if ARG is omitted or nil.
   :lighter "emidje"
   :keymap emidje-commands-map)
 
-(when (fboundp 'clojure-mode)
-  (add-hook 'clojure-mode-hook #'emidje-mode t))
-
-(when (fboundp 'cider-repl-mode)
+;;;###autoload
+(defun emidje-setup ()
+  "Setup `emidje-mode' and enable the `midje-nrepl' middleware conveniently."
+  (eval-after-load 'cider
+    #'emidje-enable-nrepl-middleware)
+  (add-hook 'clojure-mode-hook #'emidje-mode t)
   (add-hook 'cider-repl-mode-hook #'emidje-mode t))
 
 (provide 'emidje)
