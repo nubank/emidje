@@ -6,7 +6,7 @@ objects = $(wildcard *elc)
 version = $(shell cask version)
 dist = dist/emidje-$(version)
 package = $(wildcard $(dist)/emidje-*.tar)
-releasable := $(wildcard dist/emidje-*.tar.gz)
+deployable := $(wildcard dist/emidje-*.tar.gz)
 
 .cask:
 	@echo "Installing project dependencies..."
@@ -55,10 +55,9 @@ install-package: package
 
 release: lint package
 	@echo "Releasing Emidje version $(version)..."
-	@git tag $(version) && \
-		git push origin $(version) && \
+	@./bin/release.sh $(version) && \
 		cd dist; tar -zcvf emidje-$(version).tar.gz emidje-$(version) && \
-		hub -a $(releasable) $(version)
+		hub -a $(deployable) -m "Release version $(version). An extensive changelog is available at https://github.com/nubank/emidje/blob/master/CHANGELOG.md." $(version)
 	@echo "Done"
 
 clean:
