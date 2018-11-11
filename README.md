@@ -26,7 +26,7 @@ M-x package-install [RET] emidje [RET]
 ```
 
 After installing `emidje`, add the following line to your `init.el` file in
-order to enable the automatic injection of the `nREPL` middleware and activate the `emidje-mode` whenever you visit a `Clojure` file or
+order to enable the automatic injection of the nREPL middleware and activate the `emidje-mode` whenever you visit a `Clojure` file or
 switch to the `Cider's REPL` buffer:
 
 ```el
