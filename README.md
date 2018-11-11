@@ -54,7 +54,7 @@ the later must be available in the classpath of your project (see
 
 If you start a `REPL` via `M-x cider-jack-in`, you don't need anything else;
 `Emidje` will take care of injecting the correct version of `midje-nrepl` in
-your `REPL` through `Cider` facilities (see [installation](Installation)). However, if you are connecting to a
+your `REPL` through `Cider` facilities (see [installation](#Installation)). However, if you are connecting to a
 running `nREPL` process, you need to add `midje-nrepl` manually either to your
 project's `project.clj`, or in the `:user` profile found at
 `~/.lein/profiles.clj`:
