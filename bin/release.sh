@@ -22,7 +22,7 @@ create_tag() {
 
 dirty=$(git status --porcelain)
 
-if [ ! -z ${dirty+x} ]; then
+if [ ! -z "$dirty" ]; then
     echo "Error: your working tree is dirty. Aborting release."
     exit 1
 fi
