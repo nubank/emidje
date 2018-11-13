@@ -57,7 +57,7 @@ release: lint package
 	@echo "Releasing Emidje version $(version)..."
 	@./bin/release.sh $(version) && \
 		cd dist; tar -zcvf emidje-$(version).tar.gz emidje-$(version) && \
-		hub -a $(deployable) -m "Release version $(version). An extensive changelog is available at https://github.com/nubank/emidje/blob/master/CHANGELOG.md." $(version)
+		hub release create -a $(deployable) -m "Release version $(version). An extensive changelog is available at https://github.com/nubank/emidje/blob/master/CHANGELOG.md." $(version)
 	@echo "Done"
 
 clean:
