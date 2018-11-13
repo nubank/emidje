@@ -7,6 +7,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2018-11-13
+
 ### Added
 
 - Initial version with a set of features for running Midje tests, viewing
