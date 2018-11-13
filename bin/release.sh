@@ -11,8 +11,9 @@ update_changelog() {
 }
 
 commit_and_push() {
+    local current_branch=$(git symbolic-ref HEAD | sed 's!refs\/heads\/!!')
     git commit -m "Release version $version"
-    git push origin
+    git push origin $current_branch
 }
 
 create_tag() {
