@@ -4,6 +4,6 @@
 (package-file "emidje.el")
 
 (development
-        (depends-on "ecukes")
+        (depends-on "buttercup")
         (depends-on "elisp-lint")
         (depends-on "package-lint"))

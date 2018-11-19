@@ -31,6 +31,11 @@ lint: install
 	$(linting_files)
 	@echo "Done"
 
+test: install
+	@cask exec emacs --batch \
+		-l buttercup.el \
+		-f buttercup-run-discover
+
 autoloads:
 	@echo "Generating autoloads for $(project)..."
 	@cask exec emacs -Q --batch \
