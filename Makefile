@@ -1,6 +1,9 @@
 project = emidje
 elisp_files = $(wildcard *.el)
 linting_files = $(filter-out %-autoloads.el,$(elisp_files))
+exec_tests = cask exec emacs --batch \
+		-l buttercup.el \
+		-f buttercup-run-discover
 autoload_files = $(wildcard *autoloads.el*)
 objects = $(wildcard *elc)
 version = $(shell cask version)
@@ -32,9 +35,12 @@ lint: install
 	@echo "Done"
 
 test: install
-	@cask exec emacs --batch \
-		-l buttercup.el \
-		-f buttercup-run-discover
+	@$(exec_tests)
+
+docker-test: install
+	@docker run -v `pwd`:`pwd` \
+		-w `pwd` \
+		alangh/emacs:cask-0.8.4 $(exec_tests)
 
 autoloads:
 	@echo "Generating autoloads for $(project)..."
