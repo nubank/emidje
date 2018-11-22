@@ -167,7 +167,115 @@ takes a number x and computes 2^x
 
 expected: 8
 
-  actual: 9"))))
+  actual: 9")))
+
+          (describe "and there are errors"
+                    (before-each
+                     (let ((response (nrepl-dict "status"
+                                                 (list "done")
+                                                 "results"
+                                                 (nrepl-dict "octocat.math-test"
+                                                             (list (nrepl-dict "error" "java.lang.ArithmeticException: what?"
+                                                                               "context"
+                                                                               (list "about math operations" "takes a number x and computes 2^x")
+                                                                               "expected" "8\n"
+                                                                               "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                               "index" 0
+                                                                               "line" 8
+                                                                               "message" nil
+                                                                               "ns" "octocat.math-test"
+                                                                               "type" "error")))
+                                                 "summary"
+                                                 (nrepl-dict "check" 1 "error" 1 "fact" 1 "fail" 0 "ns" 1 "pass" 0 "to-do" 0))))
+                       (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
+                     (emidje-tests-with-temp-buffer "(ns octocat.math)
+(defn pow2 [x]
+)"
+                                                    (emidje-run-ns-tests)))
+
+                    (it "shows a message in the echo area by summarizing the test results"
+                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts. 0 failures, 1 errors."))
+
+                    (it "shows the report buffer with test results and summary"
+                        (expect (emidje-tests-report-content) :to-equal
+                                "Test Summary
+
+octocat.math-test
+
+Checked 1 namespaces
+Ran 1 checks in 1 facts
+1 errors
+
+Results
+
+octocat.math-test
+1 non-passing tests:
+
+Error in about math operations
+takes a number x and computes 2^x
+
+expected: 8
+
+   error: java.lang.ArithmeticException: what?")))
+
+          (describe "and there are future facts"
+                    (before-each
+                     (let ((response (nrepl-dict "status"
+                                                 (list "done")
+                                                 "results"
+                                                 (nrepl-dict "octocat.math-test"
+                                                             (list (nrepl-dict "error" "java.lang.ArithmeticException: what?"
+                                                                               "context"
+                                                                               (list "about math operations" "takes a number x and computes 2^x")
+                                                                               "expected" "8\n"
+                                                                               "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                               "index" 0
+                                                                               "line" 8
+                                                                               "message" nil
+                                                                               "ns" "octocat.math-test"
+                                                                               "type" "error")
+                                                                   (nrepl-dict "context"
+                                                                               (list "about math operations" "takes a number x and returns its square root")
+                                                                               "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                               "index" 1
+                                                                               "line" 13
+                                                                               "ns" "octocat.math-test"
+                                                                               "type" "to-do")))
+                                                 "summary"
+                                                 (nrepl-dict "check" 1 "error" 1 "fact" 1 "fail" 0 "ns" 1 "pass" 0 "to-do" 0))))
+                       (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
+                     (emidje-tests-with-temp-buffer "(ns octocat.math)
+(defn pow2 [x]
+)"
+                                                    (emidje-run-ns-tests)))
+
+                    (it "shows a message in the echo area by summarizing the test results"
+                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts. 0 failures, 1 errors."))
+
+                    (it "shows the report buffer with test results and summary"
+                        (expect (emidje-tests-report-content) :to-equal
+                                "Test Summary
+
+octocat.math-test
+
+Checked 1 namespaces
+Ran 1 checks in 1 facts
+1 errors
+
+Results
+
+octocat.math-test
+1 non-passing tests:
+
+Error in about math operations
+takes a number x and computes 2^x
+
+expected: 8
+
+   error: java.lang.ArithmeticException: what?
+
+Work To Do about math operations
+takes a number x and returns its square root"))))
 
 (describe "When I run arbitrary tests and a report is displayed"
           (let ((failed-response (nrepl-dict "status"
