@@ -27,7 +27,8 @@
      ,@body))
 
 (defun emidje-tests-last-displayed-message (&optional n)
-  "Return the last message displayed in the echo area."
+  "Return the last nth message displayed in the echo area.
+N defaults to 1, meaning the last message shown."
   (with-current-buffer (get-buffer "*Messages*")
     (let ((content (buffer-string))
           (n (or n 1)))
@@ -242,8 +243,8 @@ expected: 8
 
 (fact \"takes a number x and returns 2^x\"
 (math/pow2 3) => 8)"
-            (forward-line 2)
-            (emidje-run-test-at-point)))
+                                          (forward-line 2)
+                                          (emidje-run-test-at-point)))
 
           (it "shows a message in the echo area by saying that tests are being run"
               (expect (emidje-tests-last-displayed-message 2) :to-equal
@@ -254,8 +255,8 @@ expected: 8
 
 (fact
 (math/pow2 3) => 8)"
-               (forward-line 2)
-               (emidje-run-test-at-point))
+                                             (forward-line 2)
+                                             (emidje-run-test-at-point))
               (expect (emidje-tests-last-displayed-message 2) :to-equal
                       "Running test in octocat.math-test..."))
 
