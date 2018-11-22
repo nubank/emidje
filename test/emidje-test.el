@@ -6,48 +6,13 @@
 
 ;;; Commentary:
 
-;; This file is part of Emidje.
+;; Tests for Emidje.
 
 ;;; Code:
 
 (require 'buttercup)
 (require 'emidje)
-(require 'seq)
-
-(defvar emidje-tests-op-alias nil)
-
-(defvar emidje-tests-sent-request nil)
-
-(defmacro emidje-tests-with-temp-buffer (content &rest body)
-  (declare (debug t))
-  `(with-temp-buffer
-     (insert ,content)
-     (goto-char (point-min))
-     (switch-to-buffer (current-buffer))
-     ,@body))
-
-(defun emidje-tests-last-displayed-message (&optional n)
-  "Return the last nth message displayed in the echo area.
-N defaults to 1, meaning the last message shown."
-  (with-current-buffer (get-buffer "*Messages*")
-    (let ((content (buffer-string))
-          (n (or n 1)))
-      (thread-last (split-string content "\n")
-        seq-reverse
-        (seq-drop-while #'string-empty-p)
-        (nth (- n 1))))))
-
-(defun emidje-tests-report-content ()
-  "Return the report buffer's content as a string with no properties."
-  (when-let ((report-buffer (get-buffer emidje-test-report-buffer)))
-    (with-current-buffer report-buffer
-      (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
-
-(defun emidje-tests-fake-send-request-function (response)
-  (lambda (op-alias request callback)
-    (setq emidje-tests-op-alias op-alias)
-    (setq emidje-tests-sent-request request)
-    (funcall callback response)))
+(require 'emidje-test-helpers)
 
 (describe "When I open a Clojure file and call `emidje-run-ns-tests'"
 
