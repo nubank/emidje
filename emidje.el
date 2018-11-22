@@ -199,6 +199,19 @@ command.  See also: `emidje-setup'."
   (emidje-inject-nrepl-middleware)
   (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
+(defun emidje-insert-rectangle (lines)
+  (let ((insertcolumn (current-column))
+        (first t))
+    (while lines
+      (or first
+          (progn
+            (forward-line 1)
+            (or (bolp) (insert ?\n))
+            (move-to-column insertcolumn t)))
+      (setq first nil)
+      (insert-for-yank (car lines))
+      (setq lines (cdr lines)))))
+
 (defun emidje-insert-section (content)
   "Insert CONTENT in the current buffer's position.
 CONTENT is a string returned by nREPL middleware for the expected, actual and/or checker message sections."
@@ -208,7 +221,7 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                   (append content '("\n")))))
     (thread-last lines
       (seq-map                         #'cider-font-lock-as-clojure)
-      insert-rectangle)
+      emidje-insert-rectangle)
     (ansi-color-apply-on-region begin (point))
     (beginning-of-line)))
 
