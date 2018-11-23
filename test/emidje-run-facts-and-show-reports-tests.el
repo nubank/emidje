@@ -1,4 +1,4 @@
-;;; emidje-test --- Tests for Emidje -*- lexical-binding: t -*-
+;;; emidje-run-facts-and-show-reports-tests --- Tests for Emidje -*- lexical-binding: t -*-
 
 ;; Copyright © 2018 Nubank
 
