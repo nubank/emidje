@@ -1,4 +1,4 @@
-;;; emidje-enable-nrepl-middleware-tests --- Tests for Emidje -*- lexical-binding: t -*-
+;;; emidje-nrepl-middleware-injection-and-startup-stuff-tests --- Tests for Emidje -*- lexical-binding: t -*-
 
 ;; Copyright © 2018 Nubank
 
@@ -11,8 +11,10 @@
 ;;; Code:
 
 (require 'buttercup)
+(require 'cider)
 (require 'emidje)
 (require 'emidje-test-helpers)
+
 (describe "When I call `emidje-version'"
 
           (it "returns the Emidje's current version"
