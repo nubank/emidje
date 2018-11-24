@@ -1,4 +1,4 @@
-;;; emidje-send-requests-to-nrepl-tests --- Tests for Emidje -*- lexical-binding: t -*-
+;;; emidje-send-requests-to-nrepl-middleware-tests --- Tests for Emidje -*- lexical-binding: t -*-
 
 ;; Copyright © 2018 Nubank
 
