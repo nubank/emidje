@@ -126,7 +126,7 @@ If RESPONSE contains the `error' status, delegate to `emidje-handle-error-respon
   (nrepl-dbind-response response (status)
     (if (seq-contains status "error")
         (emidje-handle-error-response response)
-      (apply handler-function (list response)))))
+      (funcall handler-function response))))
 
 (defun emidje-send-request (op-alias &optional args callback)
   "Send a request to nREPL middleware.
@@ -141,7 +141,8 @@ argument.  When set, the request is sent asynchronously.  If
 omitted, the request is sent synchronously and the nREPL response
 is returned."
   (cider-ensure-connected)
-  (let* ((op (cdr (assq op-alias emidje-supported-operations)))
+  (let* ((op (or (cdr (assq op-alias emidje-supported-operations))
+                 (error "Unknown op alias `%s'." op-alias)))
          (message (thread-last (or args `())
                     (seq-map (lambda (value)
                                (if (symbolp value)
