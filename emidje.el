@@ -142,7 +142,7 @@ omitted, the request is sent synchronously and the nREPL response
 is returned."
   (cider-ensure-connected)
   (let* ((op (or (cdr (assq op-alias emidje-supported-operations))
-                 (error "Unknown op alias `%s'." op-alias)))
+                 (error "Unknown op alias `%s'" op-alias)))
          (message (thread-last (or args `())
                     (seq-map (lambda (value)
                                (if (symbolp value)
@@ -200,7 +200,12 @@ command.  See also: `emidje-setup'."
   (emidje-inject-nrepl-middleware)
   (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
-(defun emidje-insert-rectangle (lines)
+(defun emidje-insert-rectangle-with-no-markers (lines)
+  "Insert text of RECTANGLE with upper left corner at point.
+This function behaves exactly like `insert-rectangle', except
+that it doesn't set the mark.  LINES is a list of strings
+containing the text to be inserted."
+  ;; Borrowed from `insert-rectangle' in rect.el.
   (let ((insertcolumn (current-column))
         (first t))
     (while lines
@@ -222,7 +227,7 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                   (append content '("\n")))))
     (thread-last lines
       (seq-map                         #'cider-font-lock-as-clojure)
-      emidje-insert-rectangle)
+      emidje-insert-rectangle-with-no-markers)
     (ansi-color-apply-on-region begin (point))
     (beginning-of-line)))
 
