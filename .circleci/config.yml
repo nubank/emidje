@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       - run: make lint
-        test:
+  test:
     docker:
       - image: alangh/emacs:cask-0.8.4
     steps:
