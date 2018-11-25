@@ -11,7 +11,7 @@ jobs:
       - image: alangh/emacs:cask-0.8.4
     steps:
       - checkout
-    - run: echo "Not implemented yet"
+    - run: make test
 workflows:
   version: 2
   lint_and_test:
