@@ -9,6 +9,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - Support for running builds on [CircleCI](https://circleci.com/).
+- A set of unit tests through [Buttercup](https://github.com/jorgenschaefer/emacs-buttercup).
 
 ### Fixed
 - Do not set markers after rendering the test report buffer.
