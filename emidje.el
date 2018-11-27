@@ -25,6 +25,7 @@
 (ignore-errors
   ;; For cider >= 0.18.x
   (require 'cider-format))
+(require 'pkg-info)
 (require 'seq)
 
 (defface emidje-failure
@@ -155,12 +156,12 @@ is returned."
         (emidje-handle-nrepl-response #'identity)))))
 
 (defun emidje-version ()
-  "Get Emidje's current version from the package header."
-  (let ((version-regex "^\\([0-9]+\.[0-9]+\.[0-9]+\\)\\(.+\\)$")
-        (version (car (split-string (pkg-info-version-info 'emidje)))))
+  "Read Emidje's version from the version header."
+  (let ((version-regex "^[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*$")
+        (version (lm-version (pkg-info-library-source 'emidje))))
     (if (not (string-match version-regex version))
-        version
-      (concat (match-string 1 version) "-" (upcase (match-string 2 version))))))
+        (error "Invalid version `%s'" version)
+      version)))
 
 (defun emidje-show-warning-on-repl (message &rest args)
   "Show the MESSAGE on the Cider's REPL buffer if applicable.

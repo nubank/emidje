@@ -16,15 +16,29 @@
 (require 'emidje-test-helpers)
 
 (describe "When I call `emidje-version'"
+          (let ((source "/home/john-doe/.emacs.d/elpa/emidje-2a57c2b/emidje.el"))
 
-          (it "returns the Emidje's current version"
-              (spy-on 'pkg-info-version-info :and-return-value "1.0.1 5cfc262")
-              (expect (emidje-version) :to-equal "1.0.1")
-              (expect 'pkg-info-version-info :to-have-been-called-with 'emidje))
+            (it "returns the version defined in emidje.el"
+                (spy-on 'pkg-info-library-source :and-return-value source)
+                (spy-on 'lm-version :and-return-value "1.0.1")
+                (expect (emidje-version) :to-equal "1.0.1")
+                (expect 'pkg-info-library-source :to-have-been-called-with 'emidje)
+                (expect 'lm-version :to-have-been-called-with source))
 
-          (it "also treats versions with qualifiers in a proper way"
-              (spy-on 'pkg-info-version-info :and-return-value "1.0.1alpha 5cfc262")
-              (expect (emidje-version) :to-equal "1.0.1-ALPHA")))
+            (it "treats versions with qualifiers properly"
+                (spy-on 'pkg-info-library-source :and-return-value source)
+                (spy-on 'lm-version :and-return-value "1.0.1-SNAPSHOT")
+                (expect (emidje-version) :to-equal "1.0.1-SNAPSHOT")
+                (expect 'pkg-info-library-source :to-have-been-called-with 'emidje)
+                (expect 'lm-version :to-have-been-called-with source))
+
+            (it "throws an error when the version was mistakenly declared"
+                (spy-on 'pkg-info-library-source :and-return-value source)
+                (spy-on 'lm-version :and-return-value "1.0")
+                (expect (emidje-version) :to-throw 'error))
+
+            (it "validates that the current version was declared properly"
+                (expect (emidje-version) :not :to-throw))))
 
 (describe "When I call `emidje-show-warning-on-repl'"
           (before-each
