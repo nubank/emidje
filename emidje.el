@@ -126,7 +126,7 @@ If RESPONSE contains the `error' status, delegate to `emidje-handle-error-respon
   (nrepl-dbind-response response (status)
     (if (seq-contains status "error")
         (emidje-handle-error-response response)
-      (apply handler-function (list response)))))
+      (funcall handler-function response))))
 
 (defun emidje-send-request (op-alias &optional args callback)
   "Send a request to nREPL middleware.
@@ -141,7 +141,8 @@ argument.  When set, the request is sent asynchronously.  If
 omitted, the request is sent synchronously and the nREPL response
 is returned."
   (cider-ensure-connected)
-  (let* ((op (cdr (assq op-alias emidje-supported-operations)))
+  (let* ((op (or (cdr (assq op-alias emidje-supported-operations))
+                 (error "Unknown op alias `%s'" op-alias)))
          (message (thread-last (or args `())
                     (seq-map (lambda (value)
                                (if (symbolp value)
@@ -199,6 +200,24 @@ command.  See also: `emidje-setup'."
   (emidje-inject-nrepl-middleware)
   (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
+(defun emidje-insert-rectangle-with-no-markers (lines)
+  "Insert text of RECTANGLE with upper left corner at point.
+This function behaves exactly like `insert-rectangle', except
+that it doesn't set the mark.  LINES is a list of strings
+containing the text to be inserted."
+  ;; Borrowed from `insert-rectangle' in rect.el.
+  (let ((insertcolumn (current-column))
+        (first t))
+    (while lines
+      (or first
+          (progn
+            (forward-line 1)
+            (or (bolp) (insert ?\n))
+            (move-to-column insertcolumn t)))
+      (setq first nil)
+      (insert-for-yank (car lines))
+      (setq lines (cdr lines)))))
+
 (defun emidje-insert-section (content)
   "Insert CONTENT in the current buffer's position.
 CONTENT is a string returned by nREPL middleware for the expected, actual and/or checker message sections."
@@ -208,7 +227,7 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                   (append content '("\n")))))
     (thread-last lines
       (seq-map                         #'cider-font-lock-as-clojure)
-      insert-rectangle)
+      emidje-insert-rectangle-with-no-markers)
     (ansi-color-apply-on-region begin (point))
     (beginning-of-line)))
 
