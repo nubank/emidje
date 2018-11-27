@@ -22,9 +22,10 @@
 
 (require 'ansi-color)
 (require 'cider)
-(ignore-errors
+(unless (fboundp 'cider--format-region)
   ;; For cider >= 0.18.x
-  (require 'cider-format))
+  (require 'cider-format)
+  (declare-function cider--format-region "cider-format" (start end formatter)))
 (require 'pkg-info)
 (require 'seq)
 
