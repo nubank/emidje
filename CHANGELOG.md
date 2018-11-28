@@ -13,6 +13,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - Do not set markers after rendering the test report buffer.
+- Get Emidje's version properly when the package has been installed from Melpa.
 
 ## [1.0.0] - 2018-11-13
 
