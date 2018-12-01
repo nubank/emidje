@@ -9,7 +9,12 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - Support for running builds on [CircleCI](https://circleci.com/).
-- A set of unit tests through [Buttercup](https://github.com/jorgenschaefer/emacs-buttercup).
+- A set of unit tests through
+  [Buttercup](https://github.com/jorgenschaefer/emacs-buttercup).
+
+### Changed
+- Do not call `emidje-enable-nrepl-middleware` inside `eval-after-load`. From
+  now on users will be responsible for calling `emidje-setup` after Cider.
 
 ### Fixed
 - Do not set markers after rendering the test report buffer.
