@@ -1,6 +1,9 @@
 # Emidje
 
-[![CircleCI](https://circleci.com/gh/nubank/emidje.svg?style=svg)](https://circleci.com/gh/nubank/emidje)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![MELPA](https://melpa.org/packages/emidje-badge.svg)](https://melpa.org/#/emidje)
+[![MELPA Stable](https://stable.melpa.org/packages/emidje-badge.svg)](https://stable.melpa.org/#/emidje)
+[![Build status](https://circleci.com/gh/nubank/emidje.svg?style=svg)](https://circleci.com/gh/nubank/emidje)
 
 Test runner, report viewer and formatting tool for Midje within Emacs.
 
