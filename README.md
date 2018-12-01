@@ -86,7 +86,7 @@ emidje-toggle-load-facts-on-eval` to disable it globally. Alternatively, you can
 disable this feature entirely in your `init.el` as follows:
 
 ```el
-(setq-default emidje-load-facts-on-eval nil)
+(setq-default emidje-load-facts-on-eval t)
 ```
 
 ### Running tests
