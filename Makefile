@@ -30,6 +30,7 @@ lint: install
 		--eval "(progn (require 'package) \
 			(push '(\"melpa\" . \"http://melpa.org/packages/\") package-archives) \
 			(package-initialize))" \
+	--eval '(package-refresh-contents)' \
 	-l package-lint.el \
 	-f package-lint-batch-and-exit \
 	$(linting_files)
