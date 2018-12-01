@@ -1,5 +1,7 @@
 # Emidje
 
+[![CircleCI](https://circleci.com/gh/nubank/emidje.svg?style=svg)](https://circleci.com/gh/nubank/emidje)
+
 Test runner, report viewer and formatting tool for Midje within Emacs.
 
 `Emidje` extends [Cider][cider] to provide support for [Midje][midje] tests in a
