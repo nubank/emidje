@@ -664,8 +664,7 @@ enable the mode if ARG is omitted or nil.
 ;;;###autoload
 (defun emidje-setup ()
   "Setup `emidje-mode' and enable the `midje-nrepl' middleware conveniently."
-  (eval-after-load 'cider
-    #'emidje-enable-nrepl-middleware)
+  (emidje-enable-nrepl-middleware)
   (add-hook 'clojure-mode-hook #'emidje-mode t)
   (add-hook 'cider-repl-mode-hook #'emidje-mode t))
 

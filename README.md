@@ -30,7 +30,8 @@ order to enable the automatic injection of the nREPL middleware and activate the
 switch to the `Cider's REPL` buffer:
 
 ```el
-(emidje-setup)
+(eval-after-load 'cider
+  #'emidje-setup)
 ```
 
 Alternatively, you can write your own function to add `emidje-mode` to the
