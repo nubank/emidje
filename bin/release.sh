@@ -3,6 +3,8 @@ set -euo pipefail
 
 version=$1
 
+changelog=CHANGELOG.md
+
 update_changelog() {
     update_unreleased_section
     update_reference_links
