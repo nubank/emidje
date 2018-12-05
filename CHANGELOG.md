@@ -19,6 +19,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - Do not set markers after rendering the test report buffer.
 - Get Emidje's version properly when the package has been installed from Melpa.
+- Show proper descriptions for failing tabular facts by upgrading to the latest version of [midje-nrepl].
 
 ## [1.0.0] - 2018-11-13
 
@@ -27,3 +28,4 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   reports and formatting tabular facts within Emacs.
 
 [Unreleased]: https://github.com/nubank/emidje/compare/1.0.0...HEAD
+[midje-nrepl]: https://github.com/nubank/midje-nrepl
