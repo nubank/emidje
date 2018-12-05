@@ -4,7 +4,7 @@
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
-;; Version: 1.0.1
+;; Version: 1.0.2-SNAPSHOT
 ;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16"))
 ;; Homepage: https://github.com/nubank/emidje
 ;; Keywords: tools
