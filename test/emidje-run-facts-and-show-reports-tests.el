@@ -374,11 +374,15 @@ takes a number x and returns its square root"))))
                                        "summary"
                                        (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
+           (spy-on 'emidje-select-test-path)
            (emidje-run-all-tests))
+
+          (it "doesn't call `emidje-select-test-path'"
+              (expect 'emidje-select-test-path ) :not :to-have-been-called)
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :project)
-              (expect emidje-tests-sent-request :to-be nil))
+              (expect emidje-tests-sent-request :to-equal `(test-paths nil)))
 
           (it "shows a message in the echo area by saying that tests are being run"
               (expect (emidje-tests-last-displayed-message 2)
@@ -423,6 +427,47 @@ expected: :green\t\s\s
   actual: :orange\t\s\s
 
 Checker said about the reason: This is a message")))
+
+(describe "When I call `emidje-run-all-tests' with a prefix argument"
+          (before-each
+           (let ((response (nrepl-dict "status"
+                                       (list "done")
+                                       "results"
+                                       (nrepl-dict "octocat.math-test"
+                                                   (list (nrepl-dict "actual" "9\n"
+                                                                     "context"
+                                                                     (list "about math operations" "takes a number x and computes 2^x")
+                                                                     "expected" "8\n"
+                                                                     "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                     "index" 0
+                                                                     "line" 8
+                                                                     "message" nil
+                                                                     "ns" "octocat.math-test"
+                                                                     "type" "fail"))
+                                                   "octocat.colors"
+                                                   (list (nrepl-dict "actual" ":orange\n"
+                                                                     "context"
+                                                                     (list "about mixing colors" "blue + yellow produces green")
+                                                                     "expected" ":green\n"
+                                                                     "file" "/home/john-doe/projects/octocat/test/octocat/colors_test.clj"
+                                                                     "index" 0
+                                                                     "line" 8
+                                                                     "message" (list "This is a message")
+                                                                     "ns" "octocat.colors-test"
+                                                                     "type" "fail")))
+                                       "summary"
+                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
+             (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response))
+             (spy-on 'emidje-select-test-path :and-return-value "test"))
+           (emidje-run-all-tests t))
+
+          (it "calls `emidje-send-request' with the correct arguments"
+              (expect emidje-tests-op-alias :to-equal :project)
+              (expect emidje-tests-sent-request :to-equal `(test-paths ("test"))))
+
+          (it "shows a message in the echo area by saying that tests are being run"
+              (expect (emidje-tests-last-displayed-message 2)
+                      :to-equal "Running tests in the test folder...")))
 
 (describe "When I call `emidje-re-run-non-passing-tests'"
           (before-each

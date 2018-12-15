@@ -4,7 +4,7 @@
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
-;; Version: 1.0.2-SNAPSHOT
+;; Version: 1.1.0-SNAPSHOT
 ;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16"))
 ;; Homepage: https://github.com/nubank/emidje
 ;; Keywords: tools
@@ -39,6 +39,7 @@
   ;; For cider >= 0.18.x
   (require 'cider-format)
   (declare-function cider--format-region "cider-format" (start end formatter)))
+(require 'ido)
 (require 'pkg-info)
 (require 'seq)
 
@@ -115,8 +116,10 @@ Set to nil if you prefer to see a shorter version of test summaries."
     (:format-tabular . "midje-format-tabular")
     (:project . "midje-test-all")
     (:ns . "midje-test-ns")
-    (:test-at-point . "midje-test")
     (:retest . "midje-retest")
+    (:test-at-point . "midje-test")
+    (:test-namespaces . "test-namespaces")
+    (:test-paths . "test-paths")
     (:test-stacktrace . "midje-test-stacktrace")))
 
 (defun emidje-render-stacktrace (causes)
@@ -414,9 +417,10 @@ SUMMARY is a dict containing test counters."
 OP-ALIAS is a keyword describing the current test operation.
 ARGS is an alist of parameters that will be sent in the nREPL request."
   (let* ((ns (plist-get args 'ns))
+         (test-path (car (plist-get args 'test-paths)))
          (test-description (emidje-read-test-description-at-point)))
     (pcase op-alias
-      (:project (message "Running tests in all project namespaces..."))
+      (:project (message "Running tests in %s..." (if test-path (concat "the " (cider-propertize test-path 'bold) " folder") "all project namespaces")))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
@@ -435,10 +439,19 @@ parameters to be sent to nREPL middleware."
                              (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
                              (emidje-render-test-report results summary))))))
 
-(defun emidje-run-all-tests ()
-  "Run facts defined in all project namespaces."
-  (interactive)
-  (emidje-send-test-request :project))
+(defun emidje-select-test-path ()
+  "Prompt user for selecting a test path."
+  (let ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
+    (ido-completing-read "Select a test path:"
+                         test-paths)))
+
+(defun emidje-run-all-tests (&optional select-test-path)
+  "Run facts defined in all project namespaces.
+When called interactively with a prefix argument
+SELECT-TEST-PATH, prompt the user for selecting a test path."
+  (interactive "p")
+  (let ((test-paths (when select-test-path (list (emidje-select-test-path)))))
+    (emidje-send-test-request :project `(test-paths ,test-paths))))
 
 (defun emidje-current-test-ns ()
   "Return the test namespace that corresponds to the current Clojure namespace context."
