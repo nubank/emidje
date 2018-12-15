@@ -7,6 +7,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Allow for users to select the test path where tests will be run, by calling
+  `emidje-run-all-tests` with a prefix argument.
+
 ## [1.0.1] - 2018-12-05
 
 ### Added
@@ -21,7 +25,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - Do not set markers after rendering the test report buffer.
 - Get Emidje's version properly when the package has been installed from Melpa.
-- Show proper descriptions for failing tabular facts by upgrading to the latest version of [midje-nrepl].
+- Show proper descriptions for failing tabular facts by upgrading to the latest
+  version of [midje-nrepl].
 
 ## [1.0.0] - 2018-11-13
 

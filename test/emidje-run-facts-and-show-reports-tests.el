@@ -374,7 +374,11 @@ takes a number x and returns its square root"))))
                                        "summary"
                                        (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
+           (spy-on 'emidje-select-test-path)
            (emidje-run-all-tests))
+
+          (it "doesn't call `emidje-select-test-path'"
+              (expect 'emidje-select-test-path ) :not :to-have-been-called)
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :project)
@@ -423,6 +427,66 @@ expected: :green\t\s\s
   actual: :orange\t\s\s
 
 Checker said about the reason: This is a message")))
+
+(describe "When I call `emidje-select-test-path'"
+
+          (describe "and the project has more than one test path set"
+                    (before-each
+                     (spy-on 'emidje-send-request :and-return-value (nrepl-dict
+                                                                     "status" (list "done")
+                                                                     "test-paths" (list "integration" "test")))
+                     (spy-on 'ido-completing-read :and-return-value "test")
+                     (emidje-select-test-path))
+
+                    (it "calls `emidje-send-request' with the expected arguments"
+                        (expect 'emidje-send-request :to-have-been-called-with :test-paths))
+
+                    (it "calls `ido-completing-read' with the expected arguments"
+                        (expect 'ido-completing-read :to-have-been-called-with "Select a test path: " (list "integration" "test")
+                                nil t)))
+
+          )
+
+(describe "When I call `emidje-run-all-tests' with a prefix argument"
+          (before-each
+           (let ((response (nrepl-dict "status"
+                                       (list "done")
+                                       "results"
+                                       (nrepl-dict "octocat.math-test"
+                                                   (list (nrepl-dict "actual" "9\n"
+                                                                     "context"
+                                                                     (list "about math operations" "takes a number x and computes 2^x")
+                                                                     "expected" "8\n"
+                                                                     "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                     "index" 0
+                                                                     "line" 8
+                                                                     "message" nil
+                                                                     "ns" "octocat.math-test"
+                                                                     "type" "fail"))
+                                                   "octocat.colors"
+                                                   (list (nrepl-dict "actual" ":orange\n"
+                                                                     "context"
+                                                                     (list "about mixing colors" "blue + yellow produces green")
+                                                                     "expected" ":green\n"
+                                                                     "file" "/home/john-doe/projects/octocat/test/octocat/colors_test.clj"
+                                                                     "index" 0
+                                                                     "line" 8
+                                                                     "message" (list "This is a message")
+                                                                     "ns" "octocat.colors-test"
+                                                                     "type" "fail")))
+                                       "summary"
+                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
+             (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response))
+             (spy-on 'emidje-select-test-path :and-return-value "test"))
+           (emidje-run-all-tests t))
+
+          (it "calls `emidje-send-request' with the correct arguments"
+              (expect emidje-tests-op-alias :to-equal :project)
+              (expect emidje-tests-sent-request :to-equal `(test-paths ("test"))))
+
+          (it "shows a message in the echo area by saying that tests are being run"
+              (expect (emidje-tests-last-displayed-message 2)
+                      :to-equal "Running tests in the test folder...")))
 
 (describe "When I call `emidje-re-run-non-passing-tests'"
           (before-each
