@@ -442,7 +442,8 @@ Checker said about the reason: This is a message")))
                         (expect 'emidje-send-request :to-have-been-called-with :test-paths))
 
                     (it "calls `ido-completing-read' with the expected arguments"
-                        (expect 'ido-completing-read :to-have-been-called-with "Select a test path:" (list "integration" "test"))))
+                        (expect 'ido-completing-read :to-have-been-called-with "Select a test path: " (list "integration" "test")
+                                nil t)))
 
           )
 

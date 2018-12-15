@@ -442,13 +442,13 @@ parameters to be sent to nREPL middleware."
 (defun emidje-select-test-path ()
   "Prompt user for selecting a test path."
   (let ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
-    (ido-completing-read "Select a test path:"
-                         test-paths)))
+    (ido-completing-read "Select a test path: "
+                         test-paths nil t)))
 
 (defun emidje-run-all-tests (&optional select-test-path)
   "Run facts defined in all project namespaces.
 When called interactively with a prefix argument
-SELECT-TEST-PATH, prompt the user for selecting a test path."
+SELECT-TEST-PATH, prompts the user for selecting a test path."
   (interactive "P")
   (let ((request (when select-test-path
                    `(test-paths (,(emidje-select-test-path))))))
