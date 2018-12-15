@@ -382,7 +382,7 @@ takes a number x and returns its square root"))))
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :project)
-              (expect emidje-tests-sent-request :to-equal `(test-paths nil)))
+              (expect emidje-tests-sent-request :to-be nil))
 
           (it "shows a message in the echo area by saying that tests are being run"
               (expect (emidje-tests-last-displayed-message 2)
@@ -427,6 +427,24 @@ expected: :green\t\s\s
   actual: :orange\t\s\s
 
 Checker said about the reason: This is a message")))
+
+(describe "When I call `emidje-select-test-path'"
+
+          (describe "and the project has more than one test path set"
+                    (before-each
+                     (spy-on 'emidje-send-request :and-return-value (nrepl-dict
+                                                                     "status" (list "done")
+                                                                     "test-paths" (list "integration" "test")))
+                     (spy-on 'ido-completing-read :and-return-value "test")
+                     (emidje-select-test-path))
+
+                    (it "calls `emidje-send-request' with the expected arguments"
+                        (expect 'emidje-send-request :to-have-been-called-with :test-paths))
+
+                    (it "calls `ido-completing-read' with the expected arguments"
+                        (expect 'ido-completing-read :to-have-been-called-with "Select a test path:" (list "integration" "test"))))
+
+          )
 
 (describe "When I call `emidje-run-all-tests' with a prefix argument"
           (before-each

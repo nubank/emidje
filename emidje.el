@@ -449,9 +449,10 @@ parameters to be sent to nREPL middleware."
   "Run facts defined in all project namespaces.
 When called interactively with a prefix argument
 SELECT-TEST-PATH, prompt the user for selecting a test path."
-  (interactive "p")
-  (let ((test-paths (when select-test-path (list (emidje-select-test-path)))))
-    (emidje-send-test-request :project `(test-paths ,test-paths))))
+  (interactive "P")
+  (let ((request (when select-test-path
+                   `(test-paths (,(emidje-select-test-path))))))
+    (emidje-send-test-request :project request)))
 
 (defun emidje-current-test-ns ()
   "Return the test namespace that corresponds to the current Clojure namespace context."
