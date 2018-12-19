@@ -10,6 +10,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - Allow for users to select the test path where tests will be run, by calling
   `emidje-run-all-tests` with a prefix argument.
+- Allow for users to select an arbitrary namespace to run tests by calling
+  `emidje-run-ns-tests` with a prefix argument.
 
 ## [1.0.1] - 2018-12-05
 

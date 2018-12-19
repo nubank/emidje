@@ -2,8 +2,10 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![MELPA](https://melpa.org/packages/emidje-badge.svg)](https://melpa.org/#/emidje)
-[![MELPA Stable](https://stable.melpa.org/packages/emidje-badge.svg)](https://stable.melpa.org/#/emidje)
-[![Build status](https://circleci.com/gh/nubank/emidje.svg?style=svg)](https://circleci.com/gh/nubank/emidje)
+[![MELPA
+Stable](https://stable.melpa.org/packages/emidje-badge.svg)](https://stable.melpa.org/#/emidje)
+[![Build
+status](https://circleci.com/gh/nubank/emidje.svg?style=svg)](https://circleci.com/gh/nubank/emidje)
 
 Test runner, report viewer and formatting tool for Midje within Emacs.
 
@@ -31,8 +33,9 @@ M-x package-install [RET] emidje [RET]
 ```
 
 After installing `emidje`, add the following line to your `init.el` file in
-order to enable the automatic injection of the nREPL middleware and activate the `emidje-mode` whenever you visit a `Clojure` file or
-switch to the `Cider's REPL` buffer:
+order to enable the automatic injection of the nREPL middleware and activate the
+`emidje-mode` whenever you visit a `Clojure` file or switch to the `Cider's
+REPL` buffer:
 
 ```el
 (eval-after-load 'cider
@@ -60,10 +63,10 @@ the later must be available in the classpath of your project (see
 
 If you start a `REPL` via `M-x cider-jack-in`, you don't need anything else;
 `Emidje` will take care of injecting the correct version of `midje-nrepl` in
-your `REPL` through `Cider` facilities (see [installation](#Installation)). However, if you are connecting to a
-running `nREPL` process, you need to add `midje-nrepl` manually either to your
-project's `project.clj`, or in the `:user` profile found at
-`~/.lein/profiles.clj`:
+your `REPL` through `Cider` facilities (see
+[installation](#Installation)). However, if you are connecting to a running
+`nREPL` process, you need to add `midje-nrepl` manually either to your project's
+`project.clj`, or in the `:user` profile found at `~/.lein/profiles.clj`:
 
 ```clojure
 :plugins [[nubank/midje-nrepl "x.x.x"]]
@@ -103,11 +106,18 @@ a customizable inference logic to figure out the test namespace that corresponds
 to the namespace where you are working on. This means that you can run all tests
 defined in a given namespace without switching directly to it. Simply press the
 aforementioned keys from the implementation namespace and `Emidje` will check
-its facts.
+its facts. Alternatively, you can call `C-u C-c C-j n` from any Clojure source
+file or from the `REPL` and Emidje will display a list of known test namespaces
+in the current project. By pressing `RET` over any of those namespaces, Emidje
+will run its tests.
 
-Press `C-c C-j p` to run all tests defined in the project. The combination `C-c
-C-j r` can be used to re-run tests that didn't pass in the last execution. Use
-`C-c C-j t` to run the test at point.
+Press `C-c C-j p` to run all tests defined in the project. Alternatively, you
+can press `C-u C-c C-j p` and Emidje will show you a list of known test paths
+for the current project. By pressing `RET` over any of those paths, Emidje will
+run all tests defined within the chosen path.
+
+The keybinding `C-c C-j r` can be used to re-run tests that didn't pass in the
+last execution. Use `C-c C-j t` to run the test at point.
 
 ### Interacting with reports
 

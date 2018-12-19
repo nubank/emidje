@@ -296,6 +296,39 @@ takes a number x and returns its square root"))))
                                                (emidje-run-ns-tests)
                                                (expect (get-buffer emidje-test-report-buffer) :to-be nil)))))
 
+(describe "When I call `emidje-run-ns-tests' with a prefix argument"
+          (before-each
+           (spy-on 'emidje-select-test-ns :and-call-fake (lambda (callback)
+                                                           (funcall callback "octocat.colors-test")))
+           (spy-on 'emidje-send-test-request)
+           (emidje-run-ns-tests t))
+
+          (it "calls `emidje-select-test-ns' and sends a test
+              request with the namespace that the user has selected"
+              (expect 'emidje-send-test-request :to-have-been-called-with :ns `(ns "octocat.colors-test"))))
+
+(describe "When I call `emidje-select-test-ns'"
+          :var (test-namespaces)
+          (before-each
+           (setq test-namespaces (list "octocat.math-test" "octocat.colors-test"))
+           (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function (nrepl-dict "test-namespaces" test-namespaces
+                                                                                                            "status" (list "done"))))
+           (spy-on 'ido-completing-read :and-return-value "octocat.colors-test")
+           (spy-on 'emidje-send-test-request)
+           (emidje-select-test-ns (lambda (ns)
+                                    (emidje-send-test-request :ns `(ns ,ns)))))
+
+          (it "calls `emidje-send-request' with the expected arguments"
+              (expect emidje-tests-op-alias :to-equal :test-namespaces)
+              (expect emidje-tests-sent-request :to-equal nil))
+
+          (it "calls `ido-completing-read' with the expected arguments"
+              (expect 'ido-completing-read :to-have-been-called-with "Select a namespace: "
+                      test-namespaces nil t))
+
+          (it "calls the supplied callback with the namespace that has been selected by the user"
+              (expect 'emidje-send-test-request :to-have-been-called-with :ns `(ns "octocat.colors-test"))))
+
 (describe "When I open a Clojure test file, move the point to a fact and call `emidje-run-test-at-point'"
           (before-each
            (let ((response (nrepl-dict "status"

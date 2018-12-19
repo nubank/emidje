@@ -461,11 +461,30 @@ SELECT-TEST-PATH, prompts the user for selecting a test path."
         (user-error "No namespace to be tested in the current context")
       (funcall emidje-infer-test-ns-function current-ns))))
 
-(defun emidje-run-ns-tests ()
-  "Run all facts in the current Clojure namespace context."
-  (interactive)
-  (let ((namespace (emidje-current-test-ns)))
-    (emidje-send-test-request :ns `(ns ,namespace))))
+(defun emidje-run-tests-in-current-ns ()
+  "Run facts in the current namespace context."
+  (let ((ns (emidje-current-test-ns)))
+    (emidje-send-test-request :ns `(ns ,ns))))
+
+(defun emidje-select-test-ns (callback)
+  "Prompt user for selecting a test namespace.
+CALLBACK is a function that will be called with the selected
+namespace as its sole argument."
+  (emidje-send-request :test-namespaces `() (lambda (response)
+                                              (nrepl-dbind-response response (test-namespaces)
+                                                (when test-namespaces
+                                                  (funcall callback (ido-completing-read "Select a namespace: "
+                                                                                         test-namespaces nil t)))))))
+
+(defun emidje-run-ns-tests (&optional select-ns)
+  "Run all facts in the current Clojure namespace context.
+When called interactively with the prefix argument SELECT-NS,
+prompts the user for selecting a test namespace."
+  (interactive "P")
+  (if (not select-ns)
+      (emidje-run-tests-in-current-ns)
+    (emidje-select-test-ns (lambda (ns)
+                             (emidje-send-test-request :ns `(ns ,ns))))))
 
 (defun emidje-run-test-at-point ()
   "Run test at point.
