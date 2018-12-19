@@ -7,6 +7,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2018-12-19
+
 ### Added
 - Allow for users to select the test path where tests will be run, by calling
   `emidje-run-all-tests` with a prefix argument.
@@ -36,6 +38,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - Initial version with a set of features for running Midje tests, viewing
   reports and formatting tabular facts within Emacs.
 
-[Unreleased]: https://github.com/nubank/emidje/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/nubank/emidje/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/nubank/emidje/compare/1.0.1...1.1.0
 [1.0.1]: https://github.com/nubank/emidje/compare/1.0.0...1.0.1
 [midje-nrepl]: https://github.com/nubank/midje-nrepl
