@@ -442,16 +442,23 @@ parameters to be sent to nREPL middleware."
 
 (defun emidje-select-test-path (_ value)
   "Prompt user for selecting a test path.
-This function is meant to be used in Magit popups (for more
+This function is meant to be used as a reader in Magit popups (for more
 details see `magit-define-popup-option').  VALUE is a list
-containing the current selected test paths or nil if none is
-selected."
-  (let* ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths"))
-         (selected-path (ido-completing-read "Select a test path: "
-                                             test-paths nil t)))
-    (if value
-        (cons selected-path value)
-      (list selected-path))))
+containing the previous selected value or nil if the option
+hasn't been set yet."
+  (let* ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
+    (list (ido-completing-read "Select a test path: "
+                               test-paths nil t (car value)))))
+
+(defun emidje-read-list-from-popup-option (name value)
+  "Read values from minibuffer and return them as a list.
+This function is meant to be used as an option reader in Magit
+popups.  For more details see `magit-define-popup-option'.
+
+NAME is the option name and VALUE is the value set previously if
+any."
+  (list (read-from-minibuffer name
+                              (string-join value " "))))
 
 (defun emidje-parse-popup-args (args)
   "Parse Magit popup arguments and convert them to a list.
@@ -483,15 +490,15 @@ ARGS is a list containing key and values that will be sent as
 additional options to the nREPL middleware in order to customize
 the test execution.  Users may call this function interactively
 through `emidje-run-all-tests-popup' since it provides a Magit
-popup to fill out supported options in a more convenient way."
+popup to set supported options in a more convenient way."
   (interactive (list (emidje-parse-popup-args (emidje-run-all-tests-arguments))))
   (emidje-send-test-request :project args))
 
 (magit-define-popup emidje-run-all-tests-popup
   "Popup console for `emidje-run-all-tests' command."
   :options '("Options for filtering tests"
-             (?e "Regex to exclude namespaces" "exclusions=")
-             (?i "Regex to include namespaces" "inclusions=")
+             (?e "Regexes to exclude namespaces" "ns-exclusions=" emidje-read-list-from-popup-option)
+             (?i "Regexes to include namespaces" "ns-inclusions=" emidje-read-list-from-popup-option)
              (?t "Limit test paths" "test-paths="  emidje-select-test-path))
   :actions '((?R "Run tests" emidje-run-all-tests())))
 
