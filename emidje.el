@@ -5,7 +5,7 @@
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Version: 1.2.0-SNAPSHOT
-;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16"))
+;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16") (magit-popup "2.4.0"))
 ;; Homepage: https://github.com/nubank/emidje
 ;; Keywords: tools
 
@@ -41,6 +41,7 @@
   (declare-function cider--format-region "cider-format" (start end formatter)))
 (require 'ido)
 (require 'pkg-info)
+(require 'magit-popup)
 (require 'seq)
 
 (defface emidje-failure
@@ -439,7 +440,7 @@ parameters to be sent to nREPL middleware."
                              (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
                              (emidje-render-test-report results summary))))))
 
-(defun emidje-select-test-path (_ value)
+(defun emidje-select-test-path (_ __)
   "Prompt user for selecting a test path.
 This function is meant to be used in Magit popups (for more details see `magit-define-popup-option')."
   (let ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
@@ -449,7 +450,7 @@ This function is meant to be used in Magit popups (for more details see `magit-d
 (defun emidje-parse-popup-args (args)
   "Parse Magit popup arguments and convert them to a list.
 ARGS is a list containing options and/or switches produced by
-`magit-define-popup'. Returns a list of key and values that can
+`magit-define-popup'.  Returns a list of key and values that can
 be sent as request parameters to nREPL."
   (cl-flet* ((parse-switch (switch-name)
                            (list switch-name "true" ))
@@ -472,20 +473,21 @@ be sent as request parameters to nREPL."
 
 (defun emidje-run-all-tests (&optional args)
   "Run facts defined in all project namespaces.
-When called interactively with a prefix argument
-SELECT-TEST-PATH, prompts the user for selecting a test path."
+ARGS is a list containing key and values that will be sent as
+additional options to the nREPL middleware in order to customize
+the test execution.  Users may call this function interactively
+through `emidje-run-all-tests-popup' since it provides a Magit
+popup to fill out supported options in a more convenient way."
   (interactive (list (emidje-parse-popup-args (emidje-run-all-tests-arguments))))
   (emidje-send-test-request :project args))
 
 (magit-define-popup emidje-run-all-tests-popup
   "Popup console for `emidje-run-all-tests' command."
-  :options
-  '("Options for filtering tests"
-    (?e "Regex to exclude namespaces" "exclusions=")
-    (?i "Regex to include namespaces" "inclusions=")
-    (?t "Limit test paths" "test-paths="  emidje-select-test-path))
-  :actions
-  '((?R "Run tests" emidje-run-all-tests())))
+  :options '("Options for filtering tests"
+             (?e "Regex to exclude namespaces" "exclusions=")
+             (?i "Regex to include namespaces" "inclusions=")
+             (?t "Limit test paths" "test-paths="  emidje-select-test-path))
+  :actions '((?R "Run tests" emidje-run-all-tests())))
 
 (defun emidje-current-test-ns ()
   "Return the test namespace that corresponds to the current Clojure namespace context."
