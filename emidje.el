@@ -440,12 +440,18 @@ parameters to be sent to nREPL middleware."
                              (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
                              (emidje-render-test-report results summary))))))
 
-(defun emidje-select-test-path (_ __)
+(defun emidje-select-test-path (_ value)
   "Prompt user for selecting a test path.
-This function is meant to be used in Magit popups (for more details see `magit-define-popup-option')."
-  (let ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
-    (list (ido-completing-read "Select a test path: "
-                               test-paths nil t))))
+This function is meant to be used in Magit popups (for more
+details see `magit-define-popup-option').  VALUE is a list
+containing the current selected test paths or nil if none is
+selected."
+  (let* ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths"))
+         (selected-path (ido-completing-read "Select a test path: "
+                                             test-paths nil t)))
+    (if value
+        (cons selected-path value)
+      (list selected-path))))
 
 (defun emidje-parse-popup-args (args)
   "Parse Magit popup arguments and convert them to a list.
