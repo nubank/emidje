@@ -8,11 +8,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- [15](https://github.com/nubank/emidje/pull/15): add the command
+- [#15](https://github.com/nubank/emidje/pull/15): add the command
   `emidje-run-all-tests-popup`, bound to `c-c c-j P`. This keybinding shows a
   Magit popup that allow for users to set some switches/options to customize the
   test execution.
-- [15](https://github.com/nubank/emidje/pull/15): add ns filters to exclude
+- [#15](https://github.com/nubank/emidje/pull/15): add ns filters to exclude
   and/or include namespaces to be tested. Those options can be set through the
   aforementioned popup.
 
