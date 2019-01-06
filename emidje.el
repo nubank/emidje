@@ -421,7 +421,7 @@ ARGS is an alist of parameters that will be sent in the nREPL request."
          (test-path (car (plist-get args 'test-paths)))
          (test-description (emidje-read-test-description-at-point)))
     (pcase op-alias
-      (:project (message "Running tests in %s..." (if test-path (concat "the " (cider-propertize test-path 'bold) " folder") "all project namespaces")))
+      (:project (message "Running tests in %s..." (if test-path (concat "the " (cider-propertize test-path 'bold) " directory") "all project namespaces")))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
@@ -457,8 +457,10 @@ popups.  For more details see `magit-define-popup-option'.
 
 NAME is the option name and VALUE is the value set previously if
 any."
-  (list (read-from-minibuffer name
-                              (string-join value " "))))
+  (split-string (read-from-minibuffer name
+                                      (when value
+                                        (string-join value " ")))
+                "\s+"))
 
 (defun emidje-parse-popup-args (args)
   "Parse Magit popup arguments and convert them to a list.
@@ -469,17 +471,19 @@ be sent as request parameters to nREPL."
                            (list switch-name "true" ))
              (parse-value (value)
                           (let ((value (car (read-from-string value))))
-                            (if (symbolp value)
-                                (symbol-name value)
-                              (seq-map #'symbol-name value))))
+                            (cond
+                             ((symbolp value) (symbol-name value))
+                             ((seqp value) (seq-map #'symbol-name value))
+                             (t value))))
              (parse-option (option-name value)
                            (list option-name
                                  (parse-value value)))
              (parse-arg (arg)
-                        (let ((parts (split-string arg "=")))
+                        (let* ((parts (split-string arg "="))
+                               (name (intern (car parts))))
                           (if (= (length parts) 1)
-                              (parse-switch (car parts))
-                            (parse-option (car parts) (car (cdr parts)))))))
+                              (parse-switch name)
+                            (parse-option name (car (cdr parts)))))))
     (seq-reduce (lambda (results arg)
                   (seq-concatenate 'list results (parse-arg arg)))
                 args (list))))

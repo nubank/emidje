@@ -468,19 +468,53 @@ Checker said about the reason: This is a message")))
                      (spy-on 'emidje-send-request :and-return-value (nrepl-dict
                                                                      "status" (list "done")
                                                                      "test-paths" (list "integration" "test")))
-                     (spy-on 'ido-completing-read :and-return-value "test")
-                     (emidje-select-test-path))
+                     (spy-on 'ido-completing-read :and-return-value "test"))
 
                     (it "calls `emidje-send-request' with the expected arguments"
+                        (emidje-select-test-path nil nil)
                         (expect 'emidje-send-request :to-have-been-called-with :test-paths))
 
                     (it "calls `ido-completing-read' with the expected arguments"
+                        (emidje-select-test-path nil nil)
                         (expect 'ido-completing-read :to-have-been-called-with "Select a test path: " (list "integration" "test")
-                                nil t)))
+                                nil t nil))
 
-          )
+                    (it "shows the last value set as a completion tip when one is supplied"
+                        (emidje-select-test-path nil `("test"))
+                        (expect 'ido-completing-read :to-have-been-called-with "Select a test path: " (list "integration" "test")
+                                nil t "test"))
 
-(describe "When I call `emidje-run-all-tests' with a prefix argument"
+                    (it "returns the selected test path inside a list"
+                        (expect               (emidje-select-test-path nil nil) :to-equal `("test")))))
+
+(describe "When I call `emidje-read-list-from-popup-option'"
+          (before-each
+           (spy-on 'read-from-minibuffer :and-return-value "^integration service-test"))
+
+          (it "reads values from the minibuffer and returns them
+              as a list"
+              (expect (emidje-read-list-from-popup-option "ns-exclusions=" nil) :to-equal `("^integration" "service-test"))
+              (expect 'read-from-minibuffer :to-have-been-called-with "ns-exclusions=" nil))
+
+          (it "shows the last entered list of values as a
+              possible input"
+              (expect (emidje-read-list-from-popup-option "ns-exclusions=" `("^integration" "datomic-client-test")) :to-equal `("^integration" "service-test"))
+              (expect 'read-from-minibuffer :to-have-been-called-with "ns-exclusions=" "^integration datomic-client-test")))
+
+(describe "When I call `emidje-parse-popup-args'"
+
+          (it "parses Magit popup arguments with switches and/or
+          options, and turns them into a valid request to be sent
+          to nREPL"
+              (expect (emidje-parse-popup-args `("coverage?"
+                                                 "ns-exclusions=(too-slow-test colors-test)"
+                                                 "top-slowest-tests=5"))
+                      :to-equal `(coverage? "true"
+                                            ns-exclusions ("too-slow-test" "colors-test")
+                                            top-slowest-tests 5))))
+
+(describe "When I call `emidje-run-all-tests' interactively with
+arguments"
           (before-each
            (let ((response (nrepl-dict "status"
                                        (list "done")
@@ -509,17 +543,17 @@ Checker said about the reason: This is a message")))
                                                                      "type" "fail")))
                                        "summary"
                                        (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
-             (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response))
-             (spy-on 'emidje-select-test-path :and-return-value "test"))
-           (emidje-run-all-tests t))
+             (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
+           (setq emidje-run-all-tests-arguments `("test-paths=(test)" "ns-exclusions=(too-slow-test)"))
+           (call-interactively #'emidje-run-all-tests))
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :project)
-              (expect emidje-tests-sent-request :to-equal `(test-paths ("test"))))
+              (expect emidje-tests-sent-request :to-equal `(test-paths ("test") ns-exclusions ("too-slow-test"))))
 
           (it "shows a message in the echo area by saying that tests are being run"
               (expect (emidje-tests-last-displayed-message 2)
-                      :to-equal "Running tests in the test folder...")))
+                      :to-equal "Running tests in the test directory...")))
 
 (describe "When I call `emidje-re-run-non-passing-tests'"
           (before-each
