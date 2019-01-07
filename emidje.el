@@ -375,7 +375,7 @@ SUMMARY is a dict containing test counters."
 OP-ALIAS is a keyword describing the current test operation.
 NAMESPACE is the ns under test (only relevant when OP-ALIAS is `:ns').
 SUMMARY is a dict containing test counters."
-  (nrepl-dbind-response summary (check fact error fail pass to-do)
+  (nrepl-dbind-response summary (check fact error fail finished-in pass to-do)
     (let ((possible-test-ns (if (equal op-alias :ns)
                                 (format "%s: " namespace)
                               ""))
@@ -383,12 +383,12 @@ SUMMARY is a dict containing test counters."
                                      ""
                                    (format ", %d to do" to-do))))
       (cond
-       (emidje-show-full-test-summary (format "%sRan %d checks in %d facts. %d failures, %d errors%s." possible-test-ns check fact fail error possible-future-facts))
+       (emidje-show-full-test-summary (format "%sRan %d checks in %d facts (%s). %d failures, %d errors%s." possible-test-ns check fact finished-in fail error possible-future-facts))
        ((zerop (+ error fail)) (format "All checks (%d) succeeded." check))
        (t (format "%d checks failed, but %d succeeded." (+ error fail) pass))))))
 
 (defun emidje-echo-test-summary (op-alias namespace summary)
-  "Show a test summary on the message buffer.
+  "Show a test summary on the echo area.
 OP-ALIAS is a keyword describing the current test operation.
 NAMESPACE is the ns under test (only relevant when OP-ALIAS is `:ns').
 SUMMARY is a dict containing test counters."
