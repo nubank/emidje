@@ -4,8 +4,8 @@
 
 ;; Author: Alan Ghelardi <alan.ghelardi@nubank.com.br>
 ;; Maintainer: Alan Ghelardi <alan.ghelardi@nubank.com.br>
-;; Version: 1.1.1-SNAPSHOT
-;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16"))
+;; Version: 1.2.0-SNAPSHOT
+;; Package-Requires: ((emacs "25") (cider "0.17.0") (seq "2.16") (magit-popup "2.4.0"))
 ;; Homepage: https://github.com/nubank/emidje
 ;; Keywords: tools
 
@@ -41,6 +41,7 @@
   (declare-function cider--format-region "cider-format" (start end formatter)))
 (require 'ido)
 (require 'pkg-info)
+(require 'magit-popup)
 (require 'seq)
 
 (defface emidje-failure
@@ -420,7 +421,7 @@ ARGS is an alist of parameters that will be sent in the nREPL request."
          (test-path (car (plist-get args 'test-paths)))
          (test-description (emidje-read-test-description-at-point)))
     (pcase op-alias
-      (:project (message "Running tests in %s..." (if test-path (concat "the " (cider-propertize test-path 'bold) " folder") "all project namespaces")))
+      (:project (message "Running tests in %s..." (if test-path (concat "the " (cider-propertize test-path 'bold) " directory") "all project namespaces")))
       (:ns (message "Running tests in %s..." (cider-propertize ns 'ns)))
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
@@ -439,20 +440,71 @@ parameters to be sent to nREPL middleware."
                              (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
                              (emidje-render-test-report results summary))))))
 
-(defun emidje-select-test-path ()
-  "Prompt user for selecting a test path."
-  (let ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
-    (ido-completing-read "Select a test path: "
-                         test-paths nil t)))
+(defun emidje-select-test-path (_ value)
+  "Prompt user for selecting a test path.
+This function is meant to be used as a reader in Magit popups (for more
+details see `magit-define-popup-option').  VALUE is a list
+containing the previous selected value or nil if the option
+hasn't been set yet."
+  (let* ((test-paths (nrepl-dict-get (emidje-send-request :test-paths) "test-paths")))
+    (list (ido-completing-read "Select a test path: "
+                               test-paths nil t (car value)))))
 
-(defun emidje-run-all-tests (&optional select-test-path)
+(defun emidje-read-list-from-popup-option (name value)
+  "Read values from minibuffer and return them as a list.
+This function is meant to be used as an option reader in Magit
+popups.  For more details see `magit-define-popup-option'.
+
+NAME is the option name and VALUE is the value set previously if
+any."
+  (split-string (read-from-minibuffer name
+                                      (when value
+                                        (string-join value " ")))
+                "\s+"))
+
+(defun emidje-parse-popup-args (args)
+  "Parse Magit popup arguments and convert them to a list.
+ARGS is a list containing options and/or switches produced by
+`magit-define-popup'.  Returns a list of key and values that can
+be sent as request parameters to nREPL."
+  (cl-flet* ((parse-switch (switch-name)
+                           (list switch-name "true" ))
+             (parse-value (value)
+                          (let ((value (car (read-from-string value))))
+                            (cond
+                             ((symbolp value) (symbol-name value))
+                             ((seqp value) (seq-map #'symbol-name value))
+                             (t value))))
+             (parse-option (option-name value)
+                           (list option-name
+                                 (parse-value value)))
+             (parse-arg (arg)
+                        (let* ((parts (split-string arg "="))
+                               (name (intern (car parts))))
+                          (if (= (length parts) 1)
+                              (parse-switch name)
+                            (parse-option name (car (cdr parts)))))))
+    (seq-reduce (lambda (results arg)
+                  (seq-concatenate 'list results (parse-arg arg)))
+                args (list))))
+
+(defun emidje-run-all-tests (&optional args)
   "Run facts defined in all project namespaces.
-When called interactively with a prefix argument
-SELECT-TEST-PATH, prompts the user for selecting a test path."
-  (interactive "P")
-  (let ((request (when select-test-path
-                   `(test-paths (,(emidje-select-test-path))))))
-    (emidje-send-test-request :project request)))
+ARGS is a list containing key and values that will be sent as
+additional options to the nREPL middleware in order to customize
+the test execution.  Users may call this function interactively
+through `emidje-run-all-tests-popup' since it provides a Magit
+popup to set supported options in a more convenient way."
+  (interactive (list (emidje-parse-popup-args (emidje-run-all-tests-arguments))))
+  (emidje-send-test-request :project args))
+
+(magit-define-popup emidje-run-all-tests-popup
+  "Popup console for `emidje-run-all-tests' command."
+  :options '("Options for filtering tests"
+             (?e "Regexes to exclude namespaces" "ns-exclusions=" emidje-read-list-from-popup-option)
+             (?i "Regexes to include namespaces" "ns-inclusions=" emidje-read-list-from-popup-option)
+             (?t "Limit test paths" "test-paths="  emidje-select-test-path))
+  :actions '((?R "Run tests" emidje-run-all-tests())))
 
 (defun emidje-current-test-ns ()
   "Return the test namespace that corresponds to the current Clojure namespace context."
@@ -668,6 +720,7 @@ If called interactively with the prefix argument `OTHER-WINDOW', visit the file 
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-j f") #'emidje-format-tabular)
     (define-key map (kbd "C-c C-j p") #'emidje-run-all-tests)
+    (define-key map (kbd "C-c C-j P") #'emidje-run-all-tests-popup)
     (define-key map (kbd "C-c C-j n") #'emidje-run-ns-tests)
     (define-key map (kbd "C-c C-j t") #'emidje-run-test-at-point)
     (define-key map (kbd "C-c C-j r") #'emidje-re-run-non-passing-tests)

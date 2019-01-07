@@ -8,6 +8,7 @@
                    (elisp-lint-indent-specs . ((cider-propertize-region . 1)
                                                (cl-flet . 1)
                                                (if-let . 2)
+                                               (magit-define-popup . 1)
                                                (nrepl-dbind-response . 2)
                                                (thread-first . 1)
                                                (thread-last . 1)
