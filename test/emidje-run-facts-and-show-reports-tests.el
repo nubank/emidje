@@ -508,9 +508,11 @@ Checker said about the reason: This is a message")))
           to nREPL"
               (expect (emidje-parse-popup-args `("coverage?"
                                                  "ns-exclusions=(too-slow-test colors-test)"
+                                                 "ns-inclusions=(^adapters?)"
                                                  "top-slowest-tests=5"))
                       :to-equal `(coverage? "true"
                                             ns-exclusions ("too-slow-test" "colors-test")
+                                            ns-inclusions ("^adapters?")
                                             top-slowest-tests 5))))
 
 (describe "When I call `emidje-run-all-tests' interactively with
