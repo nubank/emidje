@@ -16,6 +16,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   and/or include namespaces to be tested. Those options can be set through the
   aforementioned popup.
 
+### Changed
+- `emidje-run-all-tests` (`c-c c-j p`) can't be called with a prefix argument
+  anymore to select test paths. Instead, users should use `c-c c-j P` to set
+  this option (and others) via a Magit popup menu.
+
 ## [1.1.0] - 2018-12-19
 
 ### Added
