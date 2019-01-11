@@ -311,6 +311,37 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                         (emidje-render-one-test-result result)))
                     ) results-dict))
 
+(defun emidje-render-profile-section (profile)
+  (cl-flet ((insert-average (data)
+                            (nrepl-dbind-response data (average total-time number-of-tests)
+                              (insert average " average ")
+                              (insert (format "(%s / %d tests)" total-time number-of-tests) ?\n)))
+            (insert-slowest-tests (slowest-tests)
+                                  (let ((number-of-tests (length (nrepl-dict-get slowest-tests "tests"))))
+                                    (if (= number-of-tests 1)
+                                        (insert (format "Slowest test (%s, %s of total time):"
+                                                        (nrepl-dict-get slowest-tests "total-time") (nrepl-dict-get slowest-tests "percent-of-total-time")))
+                                      (insert (format "Top %d slowest tests (%s, %s of total time):"
+                                                      number-of-tests (nrepl-dict-get slowest-tests "total-time") (nrepl-dict-get slowest-tests "percent-of-total-time"))))
+                                    (insert ?\n)
+                                    (dolist (test-data (nrepl-dict-get slowest-tests "tests"))
+                                      (cider-propertize-region (cider-intern-keys (cdr test-data))
+                                        (dolist (text (nrepl-dict-get test-data "context"))
+                                          (cider-insert text 'font-lock-doc-face t))
+                                        (when (> number-of-tests 1)
+                                          (insert (nrepl-dict-get test-data "total-time") ?\n)))))))
+    (nrepl-dbind-response profile (top-slowest-tests namespaces)
+      (insert-average profile)
+      (insert-slowest-tests top-slowest-tests)
+      (insert ?\n)
+      (insert (cider-propertize "Namespaces (slowest first)" 'bold) ?\n)
+      (dolist (ns-data namespaces)
+        (cider-propertize-region (cdr ns-data)
+          (insert (cider-propertize (nrepl-dict-get ns-data "ns") 'ns) ": ")
+          (insert-average ns-data))
+        (insert (format "Tooks %s of total time"
+                        (cider-propertize (nrepl-dict-get ns-data "percent-of-total-time") 'bold)) ?\n)))))
+
 (defun emidje-render-list-of-namespaces (results-dict)
   "Render a list of tested namespaces in the current buffer.
 Propertize each namespace appropriately in order to allow users
@@ -328,7 +359,8 @@ namespaces to test results."
 
 (defun emidje-render-test-summary (summary)
   "Render the test SUMMARY in the current buffer's position."
-  (nrepl-dbind-response summary (check error fact fail ns pass to-do)
+  (nrepl-dbind-response summary (check error fact fail finished-in ns pass to-do)
+    (insert (format "Finished in %s\n" finished-in))
     (insert (format "Checked %d namespaces\n" ns))
     (insert (format "Ran %d checks in %d facts\n" check fact))
     (unless (zerop fail)
@@ -352,7 +384,7 @@ SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
-(defun emidje-render-test-report (results summary)
+(defun emidje-render-test-report (results profile summary)
   "Render the test report if there are erring and/or failing test results.
 If the tests were successful and there's a test report buffer rendered, kill it.
 RESULTS is a dict of namespaces to test results.
@@ -367,6 +399,8 @@ SUMMARY is a dict containing test counters."
         (cider-insert "Test Summary" 'bold t "\n")
         (emidje-render-list-of-namespaces results)
         (emidje-render-test-summary summary)
+        (when profile
+          (emidje-render-profile-section profile))
         (emidje-render-test-results results)
         (goto-char (point-min))))))
 
@@ -435,10 +469,10 @@ parameters to be sent to nREPL middleware."
   (emidje-echo-running-tests op-alias message)
   (emidje-send-request op-alias message
                        (lambda (response)
-                         (nrepl-dbind-response response (results summary)
+                         (nrepl-dbind-response response (results profile summary)
                            (when (and results summary)
                              (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
-                             (emidje-render-test-report results summary))))))
+                             (emidje-render-test-report results profile summary))))))
 
 (defun emidje-select-test-path (_ value)
   "Prompt user for selecting a test path.
@@ -500,10 +534,13 @@ popup to set supported options in a more convenient way."
 
 (magit-define-popup emidje-run-all-tests-popup
   "Popup console for `emidje-run-all-tests' command."
+  :switches '((?p "Enable profiling of tests and list slowest ones" "profile?"))
   :options '("Options for filtering tests"
              (?e "Regexes to exclude namespaces" "ns-exclusions=" emidje-read-list-from-popup-option)
              (?i "Regexes to include namespaces" "ns-inclusions=" emidje-read-list-from-popup-option)
-             (?t "Limit test paths" "test-paths="  emidje-select-test-path))
+             (?t "Limit test paths" "test-paths="  emidje-select-test-path)
+             "Options for profiling tests"
+             (?s "Number of slowest tests" "slowest-tests="))
   :actions '((?R "Run tests" emidje-run-all-tests())))
 
 (defun emidje-current-test-ns ()
