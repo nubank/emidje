@@ -345,13 +345,15 @@ takes a number x and returns its square root"))))
                                        (nrepl-dict "octocat.math-test"
                                                    (list (nrepl-dict "context"
                                                                      (list "about math operations" "takes a number x and computes 2^x")
+                                                                     "expected" "8\n"
+                                                                     "actual" "9\n"
                                                                      "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
                                                                      "index" 0
                                                                      "line" 8
                                                                      "ns" "octocat.math-test"
-                                                                     "type" "pass")))
+                                                                     "type" "fail")))
                                        "summary"
-                                       (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "finished-in" "2 milliseconds" "ns" 1 "pass" 1 "to-do" 0))))
+                                       (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 1 "finished-in" "2 milliseconds" "ns" 1 "pass" 1 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
            (emidje-tests-with-temp-buffer "(ns octocat.math-test)
 
@@ -369,21 +371,42 @@ takes a number x and returns its square root"))))
 
 (fact
 (math/pow2 3) => 8)"
-               (forward-line 2)
-               (emidje-run-test-at-point))
+                                             (forward-line 2)
+                                             (emidje-run-test-at-point))
               (expect (emidje-tests-last-displayed-message 2) :to-equal
                       "Running test in octocat.math-test..."))
 
           (it "shows a message in the echo area by summarizing the test results"
               (expect (emidje-tests-last-displayed-message) :to-equal
-                      "Ran 1 checks in 1 facts (2 milliseconds). 0 failures, 0 errors."))
+                      "Ran 1 checks in 1 facts (2 milliseconds). 1 failures, 0 errors."))
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :test-at-point)
               (expect emidje-tests-sent-request :to-have-same-items-as `(ns "octocat.math-test"
                                                                             source "(fact \"takes a number x and returns 2^x\"
 (math/pow2 3) => 8)"
-                                                                            line 3))))
+                                                                            line 3)))
+
+          (it "shows a report buffer by displaying test results and summary"
+              (expect (emidje-tests-report-content) :to-equal
+                      "Test report
+
+** Test summary
+Finished in 2 milliseconds
+Ran 1 checks in 1 facts
+1 failures
+
+** Results
+
+octocat.math-test
+1 non-passing tests:
+
+Fail in about math operations
+takes a number x and computes 2^x
+
+expected: 8
+
+  actual: 9")))
 
 (describe "When I call `emidje-run-all-tests'"
           (before-each
