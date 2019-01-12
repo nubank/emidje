@@ -114,16 +114,15 @@
 
                     (it "shows the report buffer with test results and summary"
                         (expect (emidje-tests-report-content) :to-equal
-                                "Test Summary
+                                "Test report
 
-octocat.math-test
-
+** Checked namespaces (1)
+** Test summary
 Finished in 2 seconds
-Checked 1 namespaces
 Ran 1 checks in 1 facts
 1 failures
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -164,16 +163,15 @@ expected: 8
 
                     (it "shows the report buffer with test results and summary"
                         (expect (emidje-tests-report-content) :to-equal
-                                "Test Summary
+                                "Test report
 
-octocat.math-test
-
+** Checked namespaces (1)
+** Test summary
 Finished in 2 seconds
-Checked 1 namespaces
 Ran 1 checks in 1 facts
 1 errors
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -221,12 +219,11 @@ expected: 8
 
                     (it "shows the report buffer with test results and summary"
                         (expect (emidje-tests-report-content) :to-equal
-                                "Test Summary
+                                "Test report
 
-octocat.math-test
-
+** Checked namespaces (1)
+** Test summary
 Finished in 2 seconds
-Checked 1 namespaces
 Ran 1 checks in 1 facts
 1 errors
 
@@ -427,18 +424,15 @@ takes a number x and returns its square root"))))
 
           (it "shows a report buffer by displaying test results and summary"
               (expect (emidje-tests-report-content) :to-equal
-                      "Test Summary
+                      "Test report
 
-octocat.math-test
-
-octocat.colors
-
+** Checked namespaces (2)octocat.colors
+** Test summary
 Finished in 3 seconds
-Checked 2 namespaces
 Ran 2 checks in 2 facts
 2 failures
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -604,18 +598,15 @@ arguments"
 
           (it "shows a report buffer by displaying test results and summary"
               (expect (emidje-tests-report-content) :to-equal
-                      "Test Summary
+                      "Test report
 
-octocat.math-test
-
-octocat.colors
-
+** Checked namespaces (2)
+** Test summary
 Finished in 3 seconds
-Checked 2 namespaces
 Ran 2 checks in 2 facts
 2 failures
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
