@@ -80,7 +80,9 @@
                     (it "shows a message in the echo area by summarizing the test results"
                         (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts (2 seconds). 0 failures, 0 errors."))
 
-                    (it "doesn't show the report buffer"
+                    (it "doesn't show the report buffer when
+                    `emidje-always-show-test-report' is set to
+                    nil"
                         (expect (emidje-tests-report-content)
                                 :to-be nil)))
 
@@ -117,6 +119,8 @@
                                 "Test report
 
 ** Checked namespaces (1)
+octocat.math-test failed
+
 ** Test summary
 Finished in 2 seconds
 Ran 1 checks in 1 facts
@@ -166,6 +170,8 @@ expected: 8
                                 "Test report
 
 ** Checked namespaces (1)
+octocat.math-test failed
+
 ** Test summary
 Finished in 2 seconds
 Ran 1 checks in 1 facts
@@ -222,12 +228,14 @@ expected: 8
                                 "Test report
 
 ** Checked namespaces (1)
+octocat.math-test failed
+
 ** Test summary
 Finished in 2 seconds
 Ran 1 checks in 1 facts
 1 errors
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -393,7 +401,7 @@ takes a number x and returns its square root"))))
                                                                      "message" nil
                                                                      "ns" "octocat.math-test"
                                                                      "type" "fail"))
-                                                   "octocat.colors"
+                                                   "octocat.colors-test"
                                                    (list (nrepl-dict "actual" ":orange\n"
                                                                      "context"
                                                                      (list "about mixing colors" "blue + yellow produces green")
@@ -426,7 +434,10 @@ takes a number x and returns its square root"))))
               (expect (emidje-tests-report-content) :to-equal
                       "Test report
 
-** Checked namespaces (2)octocat.colors
+** Checked namespaces (2)
+octocat.colors-test failed
+octocat.math-test   failed
+
 ** Test summary
 Finished in 3 seconds
 Ran 2 checks in 2 facts
@@ -444,7 +455,7 @@ expected: 8
 
   actual: 9\t\s\s
 
-octocat.colors
+octocat.colors-test
 1 non-passing tests:
 
 Fail in about mixing colors
@@ -568,7 +579,7 @@ arguments"
                                                                      "message" nil
                                                                      "ns" "octocat.math-test"
                                                                      "type" "fail"))
-                                                   "octocat.colors"
+                                                   "octocat.colors-test"
                                                    (list (nrepl-dict "actual" ":orange\n"
                                                                      "context"
                                                                      (list "about mixing colors" "blue + yellow produces green")
@@ -601,6 +612,9 @@ arguments"
                       "Test report
 
 ** Checked namespaces (2)
+octocat.colors-test failed
+octocat.math-test   failed
+
 ** Test summary
 Finished in 3 seconds
 Ran 2 checks in 2 facts
@@ -618,7 +632,7 @@ expected: 8
 
   actual: 9\t\s\s
 
-octocat.colors
+octocat.colors-test
 1 non-passing tests:
 
 Fail in about mixing colors

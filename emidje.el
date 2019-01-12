@@ -374,7 +374,7 @@ namespaces to test results."
                          (thread-last (nrepl-dict-get results-dict ns)
                            (seq-every-p (lambda (test)
                                           (string-equal (nrepl-dict-get test "type") "pass"))))))
-    (let* ((namespaces (nrepl-dict-keys results-dict))
+    (let* ((namespaces (seq-sort #'string< (nrepl-dict-keys results-dict)))
            (number-of-namespaces (length namespaces))
            (max-width (seq-max (seq-map #'length namespaces))))
       (when (> number-of-namespaces 0)
