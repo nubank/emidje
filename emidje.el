@@ -314,7 +314,7 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                 (not (equal (nrepl-dict-get result "type") "pass")))
               results))
 
-(defun emidje-render-test-results (results-dict)
+(defun emidje-render-test-results-section (results-dict)
   "Iterate over RESULTS-DICT and render all test results."
   (cider-insert "** Results" 'bold t "\n")
   (nrepl-dict-map (lambda (ns results)
@@ -360,7 +360,7 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                           (cider-propertize (nrepl-dict-get ns-data "percent-of-total-time") 'bold)) ?\n))))
     (insert ?\n)))
 
-(defun emidje-render-list-of-namespaces (results-dict)
+(defun emidje-render-checked-namespaces-section (results-dict)
   "Render a list of tested namespaces in the current buffer.
 Propertize each namespace appropriately in order to allow users
 to jump to the file in question.  RESULTS-DICT is a dictionary of
@@ -387,7 +387,7 @@ namespaces to test results."
                         (cider-propertize "failed" 'failure)) ?\n))))
         (insert ?\n)))))
 
-(defun emidje-render-test-summary (summary)
+(defun emidje-render-test-summary-section (summary)
   "Render the test SUMMARY in the current buffer's position."
   (nrepl-dbind-response summary (check error fact fail finished-in ns pass to-do)
     (cider-insert "** Test summary" 'bold t)
@@ -414,26 +414,24 @@ SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
-(defun emidje-render-test-report (results profile summary)
-  "Render the test report if there are erring and/or failing test results.
-If the tests were successful and there's a test report buffer rendered, kill it.
-RESULTS is a dict of namespaces to test results.
-SUMMARY is a dict containing test counters."
-  (if (and (not emidje-always-show-test-report) (emidje-tests-passed-p summary))
-      (emidje-kill-test-report-buffer)
-    (with-current-buffer (or (get-buffer emidje-test-report-buffer)
-                             (cider-popup-buffer emidje-test-report-buffer t))
-      (emidje-report-mode)
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (cider-insert "Test report" 'bold t "\n")
-        (emidje-render-list-of-namespaces results)
-        (emidje-render-test-summary summary)
-        (when profile
-          (emidje-render-profile-section profile))
-        (when (not (emidje-tests-passed-p summary))
-          (emidje-render-test-results results))
-        (goto-char (point-min))))))
+(defun emidje-render-test-report (op-alias dict)
+  (nrepl-dbind-response dict (results profile summary)
+    (if (and (not emidje-always-show-test-report) (emidje-tests-passed-p summary))
+        (emidje-kill-test-report-buffer)
+      (with-current-buffer (or (get-buffer emidje-test-report-buffer)
+                               (cider-popup-buffer emidje-test-report-buffer t))
+        (emidje-report-mode)
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (cider-insert "Test report" 'bold t "\n")
+          (when (seq-contains `(:ns :project) op-alias)
+            (emidje-render-checked-namespaces-section results))
+          (emidje-render-test-summary-section summary)
+          (when profile
+            (emidje-render-profile-section profile))
+          (when (not (emidje-tests-passed-p summary))
+            (emidje-render-test-results-section results))
+          (goto-char (point-min)))))))
 
 (defun emidje-summarize-test-results (op-alias namespace summary)
   "Return a string summarizing test results according to user's preferences.
@@ -500,10 +498,10 @@ parameters to be sent to nREPL middleware."
   (emidje-echo-running-tests op-alias message)
   (emidje-send-request op-alias message
                        (lambda (response)
-                         (nrepl-dbind-response response (results profile summary)
+                         (nrepl-dbind-response response (results summary)
                            (when (and results summary)
                              (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
-                             (emidje-render-test-report results profile summary))))))
+                             (emidje-render-test-report op-alias response))))))
 
 (defun emidje-select-test-path (_ value)
   "Prompt user for selecting a test path.

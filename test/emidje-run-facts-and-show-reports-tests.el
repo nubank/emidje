@@ -611,10 +611,6 @@ arguments"
               (expect (emidje-tests-report-content) :to-equal
                       "Test report
 
-** Checked namespaces (2)
-octocat.colors-test failed
-octocat.math-test   failed
-
 ** Test summary
 Finished in 3 seconds
 Ran 2 checks in 2 facts
