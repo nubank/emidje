@@ -226,15 +226,20 @@ command.  See also: `emidje-setup'."
   (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
 (defmacro emidje-outline-section (heading &rest body)
+  "Create an outline region in the current buffer.
+
+First inserts the HEADING, then evaluates BODY.  If the inserted
+region has more than two lines (including the heading), hides the
+outline.  Otherwise, keeps it visible."
   (declare (indent 1)
            (debug (sexp body)))
   `(let ((begin (point)))
      (cider-insert ,heading 'bold t)
      ,@body
      (when (> (count-lines begin (point)) 2)
-         (save-excursion
-           (goto-char begin)
-           (outline-hide-subtree)))))
+       (save-excursion
+         (goto-char begin)
+         (outline-hide-subtree)))))
 
 (defun emidje-insert-rectangle-with-no-markers (lines)
   "Insert text of RECTANGLE with upper left corner at point.
@@ -329,6 +334,10 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                     ) results-dict))
 
 (defun emidje-render-profile-section (profile)
+  "Render the profile section of the report buffer.
+
+PROFILE is a `nrepl-dict' containing the information returned by
+the nREPL middleware."
   (cl-flet ((insert-average (data)
                             (nrepl-dbind-response data (average total-time number-of-tests)
                               (insert average " average ")
@@ -390,7 +399,7 @@ namespaces to test results."
 
 (defun emidje-render-test-summary-section (summary)
   "Render the test SUMMARY in the current buffer's position."
-  (nrepl-dbind-response summary (check error fact fail finished-in ns pass to-do)
+  (nrepl-dbind-response summary (check error fact fail finished-in pass to-do)
     (cider-insert "** Test summary" 'bold t)
     (insert (format "Finished in %s\n" finished-in))
     (insert (format "Ran %d checks in %d facts\n" check fact))
@@ -416,11 +425,21 @@ SUMMARY is a dict containing test counters."
     (zerop (+ fail error))))
 
 (defun emidje-show-test-report-p (request summary)
+  "Return t if the test report should be rendered.
+
+REQUEST is a list containing the parameters sent to the nREPL
+middleware.  SUMMARY is a `nrepl-dict' with test counters."
   (or emidje-always-show-test-report
-   (seq-contains request 'profile?)
-   (not (emidje-tests-passed-p summary))))
+      (seq-contains request 'profile?)
+      (not (emidje-tests-passed-p summary))))
 
 (defun emidje-render-test-report (op-alias request response)
+  "Render the test report if applicable.
+
+OP-ALIAS is a keyword that represents the current test
+operation.  REQUEST is a list containing the parameters sent to
+the nREPL middleware and RESPONSE a `nrepl-dict' containing the
+information returned by the same."
   (nrepl-dbind-response response (results profile summary)
     (if (not (emidje-show-test-report-p request summary))
         (emidje-kill-test-report-buffer)
@@ -499,8 +518,8 @@ ARGS is an alist of parameters that will be sent in the nREPL request."
   "Send the test request to nREPL middleware.
 Show the test report if applicable.  OP-ALIAS is a keyword
 describing the desired test operation (see
-`emidje-supported-operations'). REQUEST is an alist of
-parameters to be sent to nREPL middleware."
+`emidje-supported-operations').  REQUEST is a list of parameters
+to be sent to nREPL middleware."
   (emidje-echo-running-tests op-alias request)
   (emidje-send-request op-alias request
                        (lambda (response)
