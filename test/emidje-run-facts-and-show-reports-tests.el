@@ -304,6 +304,39 @@ takes a number x and returns its square root"))))
                                                (emidje-run-ns-tests)
                                                (expect (get-buffer emidje-test-report-buffer) :to-be nil)))))
 
+(describe "When I set the custom variable `emidje-always-show-test-report' to t"
+          (before-each
+           (let ((response (nrepl-dict "status"
+                                       (list "done")
+                                       "results"
+                                       (nrepl-dict "octocat.math-test"
+                                                   (list (nrepl-dict "context"
+                                                                     (list "about math operations" "takes a number x and computes 2^x")
+                                                                     "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                     "index" 0
+                                                                     "line" 8
+                                                                     "ns" "octocat.math-test"
+                                                                     "type" "pass")))
+                                       "summary"
+                                       (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "finished-in" "2 seconds" "ns" 1 "pass" 1 "to-do" 0))))
+             (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response))
+             (setq-default emidje-always-show-test-report t)
+             (emidje-run-all-tests)))
+          (after-each
+           (setq-default emidje-always-show-test-report nil))
+
+          (it "shows the report buffer even when there are no failures"
+              (expect (emidje-tests-report-content)
+                      :to-equal "Test report
+
+** Checked namespaces (1)
+octocat.math-test passed
+
+** Test summary
+Finished in 2 seconds
+Ran 1 checks in 1 facts
+1 passed")))
+
 (describe "When I call `emidje-run-ns-tests' with a prefix argument"
           (before-each
            (spy-on 'emidje-select-test-ns :and-call-fake (lambda (callback)
