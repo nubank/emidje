@@ -231,9 +231,10 @@ command.  See also: `emidje-setup'."
   `(let ((begin (point)))
      (cider-insert ,heading 'bold t)
      ,@body
-     (save-excursion
-       (goto-char begin)
-       (outline-hide-subtree))))
+     (when (> (count-lines begin (point)) 2)
+         (save-excursion
+           (goto-char begin)
+           (outline-hide-subtree)))))
 
 (defun emidje-insert-rectangle-with-no-markers (lines)
   "Insert text of RECTANGLE with upper left corner at point.
@@ -356,8 +357,8 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
           (cider-propertize-region (cdr ns-data)
             (insert (cider-propertize (nrepl-dict-get ns-data "ns") 'ns) ": ")
             (insert-average ns-data))
-          (insert (format "Tooks %s of total time"
-                          (cider-propertize (nrepl-dict-get ns-data "percent-of-total-time") 'bold)) ?\n))))
+          (insert (format "%s of total time"
+                          (nrepl-dict-get ns-data "percent-of-total-time")) ?\n))))
     (insert ?\n)))
 
 (defun emidje-render-checked-namespaces-section (results-dict)
@@ -414,9 +415,14 @@ SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
-(defun emidje-render-test-report (op-alias dict)
-  (nrepl-dbind-response dict (results profile summary)
-    (if (and (not emidje-always-show-test-report) (emidje-tests-passed-p summary))
+(defun emidje-show-test-report-p (request summary)
+  (or emidje-always-show-test-report
+   (seq-contains request 'profile?)
+   (not (emidje-tests-passed-p summary))))
+
+(defun emidje-render-test-report (op-alias request response)
+  (nrepl-dbind-response response (results profile summary)
+    (if (not (emidje-show-test-report-p request summary))
         (emidje-kill-test-report-buffer)
       (with-current-buffer (or (get-buffer emidje-test-report-buffer)
                                (cider-popup-buffer emidje-test-report-buffer t))
@@ -489,19 +495,19 @@ ARGS is an alist of parameters that will be sent in the nREPL request."
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
 
-(defun emidje-send-test-request (op-alias &optional message)
+(defun emidje-send-test-request (op-alias &optional request)
   "Send the test request to nREPL middleware.
 Show the test report if applicable.  OP-ALIAS is a keyword
 describing the desired test operation (see
-`emidje-supported-operations').  MESSAGE is an alist of
+`emidje-supported-operations'). REQUEST is an alist of
 parameters to be sent to nREPL middleware."
-  (emidje-echo-running-tests op-alias message)
-  (emidje-send-request op-alias message
+  (emidje-echo-running-tests op-alias request)
+  (emidje-send-request op-alias request
                        (lambda (response)
                          (nrepl-dbind-response response (results summary)
                            (when (and results summary)
-                             (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
-                             (emidje-render-test-report op-alias response))))))
+                             (emidje-echo-test-summary op-alias (plist-get request 'ns) summary)
+                             (emidje-render-test-report op-alias request response))))))
 
 (defun emidje-select-test-path (_ value)
   "Prompt user for selecting a test path.
