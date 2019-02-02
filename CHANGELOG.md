@@ -19,6 +19,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   profiling information from tests. The switch `-p` activate such option and
   those information are displayed under the section *profile* of the report
   buffer.
+  - [#17](https://github.com/nubank/emidje/pull/17): add two new options to the
+    popup menu: `test-exclusions` and `test-inclusions`. Those send the
+    respective parameters to the nREPL middleware, by allowing for users to
+    filter tests by metadata keywords.
 
 ### Changed
 - `emidje-run-all-tests` (`c-c c-j p`) can't be called with a prefix argument
