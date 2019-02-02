@@ -73,6 +73,12 @@
   :type 'boolean
   :package-version '(emidje . "1.0.0"))
 
+(defcustom emidje-always-show-test-report nil
+  "When nil, only show the test report if tests fail."
+  :group 'emidje
+  :type 'boolean
+  :package-version '(emidje . "1.2.0"))
+
 (defcustom emidje-infer-test-ns-function 'emidje-default-infer-test-ns-function
   "Function to infer the test namespace."
   :type 'symbol
@@ -219,6 +225,22 @@ command.  See also: `emidje-setup'."
   (emidje-inject-nrepl-middleware)
   (add-hook 'cider-connected-hook #'emidje-check-nrepl-middleware-version))
 
+(defmacro emidje-outline-section (heading &rest body)
+  "Create an outline region in the current buffer.
+
+First inserts the HEADING, then evaluates BODY.  If the inserted
+region has more than two lines (including the heading), hides the
+outline.  Otherwise, keeps it visible."
+  (declare (indent 1)
+           (debug (sexp body)))
+  `(let ((begin (point)))
+     (cider-insert ,heading 'bold t)
+     ,@body
+     (when (> (count-lines begin (point)) 2)
+       (save-excursion
+         (goto-char begin)
+         (outline-hide-subtree)))))
+
 (defun emidje-insert-rectangle-with-no-markers (lines)
   "Insert text of RECTANGLE with upper left corner at point.
 This function behaves exactly like `insert-rectangle', except
@@ -298,9 +320,9 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                 (not (equal (nrepl-dict-get result "type") "pass")))
               results))
 
-(defun emidje-render-test-results (results-dict)
+(defun emidje-render-test-results-section (results-dict)
   "Iterate over RESULTS-DICT and render all test results."
-  (cider-insert "Results" 'bold t "\n")
+  (cider-insert "** Results" 'bold t "\n")
   (nrepl-dict-map (lambda (ns results)
                     (let* ((displayable-results (emidje-get-displayable-results results))
                            (problems (emidje-count-non-passing-tests displayable-results)))
@@ -311,7 +333,44 @@ CONTENT is a string returned by nREPL middleware for the expected, actual and/or
                         (emidje-render-one-test-result result)))
                     ) results-dict))
 
-(defun emidje-render-list-of-namespaces (results-dict)
+(defun emidje-render-profile-section (profile)
+  "Render the profile section of the report buffer.
+
+PROFILE is a `nrepl-dict' containing the information returned by
+the nREPL middleware."
+  (cl-flet ((insert-average (data)
+                            (nrepl-dbind-response data (average total-time number-of-tests)
+                              (insert average " average ")
+                              (insert (format "(%s / %d tests)" total-time number-of-tests) ?\n)))
+            (insert-slowest-tests (slowest-tests)
+                                  (let ((number-of-tests (length (nrepl-dict-get slowest-tests "tests"))))
+                                    (if (= number-of-tests 1)
+                                        (insert (format "Slowest test (%s, %s of total time):"
+                                                        (nrepl-dict-get slowest-tests "total-time") (nrepl-dict-get slowest-tests "percent-of-total-time")))
+                                      (insert (format "Top %d slowest tests (%s, %s of total time):"
+                                                      number-of-tests (nrepl-dict-get slowest-tests "total-time") (nrepl-dict-get slowest-tests "percent-of-total-time"))))
+                                    (insert ?\n)
+                                    (dolist (test-data (nrepl-dict-get slowest-tests "tests"))
+                                      (cider-propertize-region (cider-intern-keys (cdr test-data))
+                                        (dolist (text (nrepl-dict-get test-data "context"))
+                                          (cider-insert text 'font-lock-doc-face t))
+                                        (when (> number-of-tests 1)
+                                          (insert (nrepl-dict-get test-data "total-time") ?\n)))))))
+    (emidje-outline-section "** Profile"
+      (nrepl-dbind-response profile (top-slowest-tests namespaces)
+        (insert-average profile)
+        (insert-slowest-tests top-slowest-tests)
+        (insert ?\n)
+        (cider-insert "*** Namespaces (slowest first)" 'bold t)
+        (dolist (ns-data namespaces)
+          (cider-propertize-region (cdr ns-data)
+            (insert (cider-propertize (nrepl-dict-get ns-data "ns") 'ns) ": ")
+            (insert-average ns-data))
+          (insert (format "%s of total time"
+                          (nrepl-dict-get ns-data "percent-of-total-time")) ?\n))))
+    (insert ?\n)))
+
+(defun emidje-render-checked-namespaces-section (results-dict)
   "Render a list of tested namespaces in the current buffer.
 Propertize each namespace appropriately in order to allow users
 to jump to the file in question.  RESULTS-DICT is a dictionary of
@@ -320,16 +379,29 @@ namespaces to test results."
                            (thread-first results-dict
                              (nrepl-dict-get namespace)
                              car
-                             (nrepl-dict-get "file"))))
-    (dolist (namespace (nrepl-dict-keys results-dict))
-      (insert (propertize (cider-propertize namespace 'ns)
-                          'file (file-path-for namespace)) "\n")
-      (insert "\n"))))
+                             (nrepl-dict-get "file")))
+            (ns-passed-p (ns)
+                         (thread-last (nrepl-dict-get results-dict ns)
+                           (seq-every-p (lambda (test)
+                                          (string-equal (nrepl-dict-get test "type") "pass"))))))
+    (let* ((namespaces (seq-sort #'string< (nrepl-dict-keys results-dict)))
+           (number-of-namespaces (length namespaces))
+           (max-width (seq-max (seq-map #'length namespaces))))
+      (when (> number-of-namespaces 0)
+        (emidje-outline-section (format "** Checked namespaces (%d)" number-of-namespaces)
+          (dolist (namespace namespaces)
+            (cider-propertize-region `(file ,(file-path-for namespace))
+              (cider-insert (format (concat "%-" (number-to-string max-width) "s ") namespace) 'ns)
+              (insert (if (ns-passed-p namespace)
+                          (cider-propertize "passed" 'success)
+                        (cider-propertize "failed" 'failure)) ?\n))))
+        (insert ?\n)))))
 
-(defun emidje-render-test-summary (summary)
+(defun emidje-render-test-summary-section (summary)
   "Render the test SUMMARY in the current buffer's position."
-  (nrepl-dbind-response summary (check error fact fail ns pass to-do)
-    (insert (format "Checked %d namespaces\n" ns))
+  (nrepl-dbind-response summary (check error fact fail finished-in pass to-do)
+    (cider-insert "** Test summary" 'bold t)
+    (insert (format "Finished in %s\n" finished-in))
     (insert (format "Ran %d checks in %d facts\n" check fact))
     (unless (zerop fail)
       (cider-insert (format "%d failures" fail) 'emidje-failure t))
@@ -352,30 +424,46 @@ SUMMARY is a dict containing test counters."
   (nrepl-dbind-response summary (fail error)
     (zerop (+ fail error))))
 
-(defun emidje-render-test-report (results summary)
-  "Render the test report if there are erring and/or failing test results.
-If the tests were successful and there's a test report buffer rendered, kill it.
-RESULTS is a dict of namespaces to test results.
-SUMMARY is a dict containing test counters."
-  (if (emidje-tests-passed-p summary)
-      (emidje-kill-test-report-buffer)
-    (with-current-buffer (or (get-buffer emidje-test-report-buffer)
-                             (cider-popup-buffer emidje-test-report-buffer t))
-      (emidje-report-mode)
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (cider-insert "Test Summary" 'bold t "\n")
-        (emidje-render-list-of-namespaces results)
-        (emidje-render-test-summary summary)
-        (emidje-render-test-results results)
-        (goto-char (point-min))))))
+(defun emidje-show-test-report-p (request summary)
+  "Return t if the test report should be rendered.
+
+REQUEST is a list containing the parameters sent to the nREPL
+middleware.  SUMMARY is a `nrepl-dict' with test counters."
+  (or emidje-always-show-test-report
+      (seq-contains request 'profile?)
+      (not (emidje-tests-passed-p summary))))
+
+(defun emidje-render-test-report (op-alias request response)
+  "Render the test report if applicable.
+
+OP-ALIAS is a keyword that represents the current test
+operation.  REQUEST is a list containing the parameters sent to
+the nREPL middleware and RESPONSE a `nrepl-dict' containing the
+information returned by the same."
+  (nrepl-dbind-response response (results profile summary)
+    (if (not (emidje-show-test-report-p request summary))
+        (emidje-kill-test-report-buffer)
+      (with-current-buffer (or (get-buffer emidje-test-report-buffer)
+                               (cider-popup-buffer emidje-test-report-buffer t))
+        (emidje-report-mode)
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (cider-insert "Test report" 'bold t "\n")
+          (when (seq-contains `(:ns :project) op-alias)
+            (emidje-render-checked-namespaces-section results))
+          (emidje-render-test-summary-section summary)
+          (when profile
+            (emidje-render-profile-section profile))
+          (when (not (emidje-tests-passed-p summary))
+            (emidje-render-test-results-section results))
+          (goto-char (point-min)))))))
 
 (defun emidje-summarize-test-results (op-alias namespace summary)
   "Return a string summarizing test results according to user's preferences.
 OP-ALIAS is a keyword describing the current test operation.
 NAMESPACE is the ns under test (only relevant when OP-ALIAS is `:ns').
 SUMMARY is a dict containing test counters."
-  (nrepl-dbind-response summary (check fact error fail pass to-do)
+  (nrepl-dbind-response summary (check fact error fail finished-in pass to-do)
     (let ((possible-test-ns (if (equal op-alias :ns)
                                 (format "%s: " namespace)
                               ""))
@@ -383,12 +471,12 @@ SUMMARY is a dict containing test counters."
                                      ""
                                    (format ", %d to do" to-do))))
       (cond
-       (emidje-show-full-test-summary (format "%sRan %d checks in %d facts. %d failures, %d errors%s." possible-test-ns check fact fail error possible-future-facts))
+       (emidje-show-full-test-summary (format "%sRan %d checks in %d facts (%s). %d failures, %d errors%s." possible-test-ns check fact finished-in fail error possible-future-facts))
        ((zerop (+ error fail)) (format "All checks (%d) succeeded." check))
        (t (format "%d checks failed, but %d succeeded." (+ error fail) pass))))))
 
 (defun emidje-echo-test-summary (op-alias namespace summary)
-  "Show a test summary on the message buffer.
+  "Show a test summary on the echo area.
 OP-ALIAS is a keyword describing the current test operation.
 NAMESPACE is the ns under test (only relevant when OP-ALIAS is `:ns').
 SUMMARY is a dict containing test counters."
@@ -426,19 +514,19 @@ ARGS is an alist of parameters that will be sent in the nREPL request."
       (:test-at-point (message "Running test %sin %s..." (cider-propertize test-description 'bold) (cider-propertize ns 'ns)))
       (      :retest (message "Re-running non-passing tests...")))))
 
-(defun emidje-send-test-request (op-alias &optional message)
+(defun emidje-send-test-request (op-alias &optional request)
   "Send the test request to nREPL middleware.
 Show the test report if applicable.  OP-ALIAS is a keyword
 describing the desired test operation (see
-`emidje-supported-operations').  MESSAGE is an alist of
-parameters to be sent to nREPL middleware."
-  (emidje-echo-running-tests op-alias message)
-  (emidje-send-request op-alias message
+`emidje-supported-operations').  REQUEST is a list of parameters
+to be sent to nREPL middleware."
+  (emidje-echo-running-tests op-alias request)
+  (emidje-send-request op-alias request
                        (lambda (response)
                          (nrepl-dbind-response response (results summary)
                            (when (and results summary)
-                             (emidje-echo-test-summary op-alias (plist-get message 'ns) summary)
-                             (emidje-render-test-report results summary))))))
+                             (emidje-echo-test-summary op-alias (plist-get request 'ns) summary)
+                             (emidje-render-test-report op-alias request response))))))
 
 (defun emidje-select-test-path (_ value)
   "Prompt user for selecting a test path.
@@ -500,10 +588,13 @@ popup to set supported options in a more convenient way."
 
 (magit-define-popup emidje-run-all-tests-popup
   "Popup console for `emidje-run-all-tests' command."
+  :switches '((?p "Enable profiling of tests and list slowest ones" "profile?"))
   :options '("Options for filtering tests"
              (?e "Regexes to exclude namespaces" "ns-exclusions=" emidje-read-list-from-popup-option)
              (?i "Regexes to include namespaces" "ns-inclusions=" emidje-read-list-from-popup-option)
-             (?t "Limit test paths" "test-paths="  emidje-select-test-path))
+             (?t "Limit test paths" "test-paths="  emidje-select-test-path)
+             "Options for profiling tests"
+             (?s "Number of slowest tests" "slowest-tests="))
   :actions '((?R "Run tests" emidje-run-all-tests())))
 
 (defun emidje-current-test-ns ()
@@ -708,12 +799,16 @@ If called interactively with the prefix argument `OTHER-WINDOW', visit the file 
     (define-key map (kbd "e") #'emidje-show-test-stacktrace)
     (define-key map (kbd "RET") #'emidje-jump-to-definition)
     (define-key map (kbd "M-.") #'emidje-jump-to-definition)
+    (define-key map (kbd "TAB") #'org-cycle)
+    (define-key map (kbd "<backtab>") #'org-shifttab)
     (define-key map (kbd "n r") #'emidje-next-result)
     (define-key map (kbd "p r") #'emidje-previous-result)
     (define-key map (kbd "n e") #'emidje-next-error)
     (define-key map (kbd "p e") #'emidje-previous-error)
     (define-key map (kbd "n f") #'emidje-next-failure)
     (define-key map (kbd "p f") #'emidje-previous-failure)
+    (define-key map (kbd "n h") #'outline-next-heading)
+    (define-key map (kbd "p h") #'outline-previous-heading)
     map))
 
 (defvar emidje-commands-map

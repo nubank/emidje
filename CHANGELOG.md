@@ -15,11 +15,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - [#15](https://github.com/nubank/emidje/pull/15): add ns filters to exclude
   and/or include namespaces to be tested. Those options can be set through the
   aforementioned popup.
+- [#16](https://github.com/nubank/emidje/pull/16): add support for collecting
+  profiling information from tests. The switch `-p` activate such option and
+  those information are displayed under the section *profile* of the report
+  buffer.
 
 ### Changed
 - `emidje-run-all-tests` (`c-c c-j p`) can't be called with a prefix argument
   anymore to select test paths. Instead, users should use `c-c c-j P` to set
   this option (and others) via a Magit popup menu.
+- [#16](https://github.com/nubank/emidje/pull/16): as a consequence of the new
+  added features, the report buffer has been changed to be more friendly. Now,
+  related information are grouped in outline sections that may be expanded or
+  collapsed.
 
 ## [1.1.0] - 2018-12-19
 

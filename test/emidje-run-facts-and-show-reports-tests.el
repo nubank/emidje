@@ -65,7 +65,7 @@
                                                                                "ns" "octocat.math-test"
                                                                                "type" "pass")))
                                                  "summary"
-                                                 (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "ns" 1 "pass" 1 "to-do" 0))))
+                                                 (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "finished-in" "2 seconds" "ns" 1 "pass" 1 "to-do" 0))))
                        (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
                      (emidje-tests-with-temp-buffer "(ns octocat.math)
 
@@ -78,9 +78,11 @@
                         (expect emidje-tests-sent-request :to-equal `(ns "octocat.math-test")))
 
                     (it "shows a message in the echo area by summarizing the test results"
-                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts. 0 failures, 0 errors."))
+                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts (2 seconds). 0 failures, 0 errors."))
 
-                    (it "doesn't show the report buffer"
+                    (it "doesn't show the report buffer when
+                    `emidje-always-show-test-report' is set to
+                    nil"
                         (expect (emidje-tests-report-content)
                                 :to-be nil)))
 
@@ -101,7 +103,7 @@
                                                                                "ns" "octocat.math-test"
                                                                                "type" "fail")))
                                                  "summary"
-                                                 (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 1 "ns" 1 "pass" 0 "to-do" 0))))
+                                                 (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 1 "finished-in" "2 seconds" "ns" 1 "pass" 0 "to-do" 0))))
                        (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
                      (emidje-tests-with-temp-buffer "(ns octocat.math)
 
@@ -110,19 +112,21 @@
                                                     (emidje-run-ns-tests)))
 
                     (it "shows a message in the echo area by summarizing the test results"
-                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts. 1 failures, 0 errors."))
+                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts (2 seconds). 1 failures, 0 errors."))
 
                     (it "shows the report buffer with test results and summary"
                         (expect (emidje-tests-report-content) :to-equal
-                                "Test Summary
+                                "Test report
 
-octocat.math-test
+** Checked namespaces (1)
+octocat.math-test failed
 
-Checked 1 namespaces
+** Test summary
+Finished in 2 seconds
 Ran 1 checks in 1 facts
 1 failures
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -151,7 +155,7 @@ expected: 8
                                                                                "ns" "octocat.math-test"
                                                                                "type" "error")))
                                                  "summary"
-                                                 (nrepl-dict "check" 1 "error" 1 "fact" 1 "fail" 0 "ns" 1 "pass" 0 "to-do" 0))))
+                                                 (nrepl-dict "check" 1 "error" 1 "fact" 1 "fail" 0 "finished-in" "2 seconds" "ns" 1 "pass" 0 "to-do" 0))))
                        (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
                      (emidje-tests-with-temp-buffer "(ns octocat.math)
 (defn pow2 [x]
@@ -159,19 +163,21 @@ expected: 8
                                                     (emidje-run-ns-tests)))
 
                     (it "shows a message in the echo area by summarizing the test results"
-                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts. 0 failures, 1 errors."))
+                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts (2 seconds). 0 failures, 1 errors."))
 
                     (it "shows the report buffer with test results and summary"
                         (expect (emidje-tests-report-content) :to-equal
-                                "Test Summary
+                                "Test report
 
-octocat.math-test
+** Checked namespaces (1)
+octocat.math-test failed
 
-Checked 1 namespaces
+** Test summary
+Finished in 2 seconds
 Ran 1 checks in 1 facts
 1 errors
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -207,7 +213,7 @@ expected: 8
                                                                                "ns" "octocat.math-test"
                                                                                "type" "to-do")))
                                                  "summary"
-                                                 (nrepl-dict "check" 1 "error" 1 "fact" 1 "fail" 0 "ns" 1 "pass" 0 "to-do" 0))))
+                                                 (nrepl-dict "check" 1 "error" 1 "fact" 1 "fail" 0 "finished-in" "2 seconds" "ns" 1 "pass" 0 "to-do" 0))))
                        (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
                      (emidje-tests-with-temp-buffer "(ns octocat.math)
 (defn pow2 [x]
@@ -215,19 +221,21 @@ expected: 8
                                                     (emidje-run-ns-tests)))
 
                     (it "shows a message in the echo area by summarizing the test results"
-                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts. 0 failures, 1 errors."))
+                        (expect (emidje-tests-last-displayed-message) :to-equal "octocat.math-test: Ran 1 checks in 1 facts (2 seconds). 0 failures, 1 errors."))
 
                     (it "shows the report buffer with test results and summary"
                         (expect (emidje-tests-report-content) :to-equal
-                                "Test Summary
+                                "Test report
 
-octocat.math-test
+** Checked namespaces (1)
+octocat.math-test failed
 
-Checked 1 namespaces
+** Test summary
+Finished in 2 seconds
 Ran 1 checks in 1 facts
 1 errors
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -258,7 +266,7 @@ takes a number x and returns its square root"))))
                                                                            "ns" "octocat.math-test"
                                                                            "type" "fail")))
                                              "summary"
-                                             (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 1 "ns" 1 "pass" 0 "to-do" 0)) )
+                                             (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 1 "finished-in" "2 seconds" "ns" 1 "pass" 0 "to-do" 0)) )
                 (succeeded-response (nrepl-dict "status"
                                                 (list "done")
                                                 "results"
@@ -271,7 +279,7 @@ takes a number x and returns its square root"))))
                                                                               "ns" "octocat.math-test"
                                                                               "type" "pass")))
                                                 "summary"
-                                                (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "ns" 1 "pass" 1 "to-do" 0))))
+                                                (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "finished-in" "2 seconds" "ns" 1 "pass" 1 "to-do" 0))))
 
             (it "shows a shorter message in the echo area when I customize `emidje-show-full-test-summary' and tests pass"
                 (emidje-tests-with-temp-buffer "(ns octocat.math)"
@@ -295,6 +303,39 @@ takes a number x and returns its square root"))))
                                                (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function succeeded-response))
                                                (emidje-run-ns-tests)
                                                (expect (get-buffer emidje-test-report-buffer) :to-be nil)))))
+
+(describe "When I set the custom variable `emidje-always-show-test-report' to t"
+          (before-each
+           (let ((response (nrepl-dict "status"
+                                       (list "done")
+                                       "results"
+                                       (nrepl-dict "octocat.math-test"
+                                                   (list (nrepl-dict "context"
+                                                                     (list "about math operations" "takes a number x and computes 2^x")
+                                                                     "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
+                                                                     "index" 0
+                                                                     "line" 8
+                                                                     "ns" "octocat.math-test"
+                                                                     "type" "pass")))
+                                       "summary"
+                                       (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "finished-in" "2 seconds" "ns" 1 "pass" 1 "to-do" 0))))
+             (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response))
+             (setq-default emidje-always-show-test-report t)
+             (emidje-run-all-tests)))
+          (after-each
+           (setq-default emidje-always-show-test-report nil))
+
+          (it "shows the report buffer even when there are no failures"
+              (expect (emidje-tests-report-content)
+                      :to-equal "Test report
+
+** Checked namespaces (1)
+octocat.math-test passed
+
+** Test summary
+Finished in 2 seconds
+Ran 1 checks in 1 facts
+1 passed")))
 
 (describe "When I call `emidje-run-ns-tests' with a prefix argument"
           (before-each
@@ -337,13 +378,15 @@ takes a number x and returns its square root"))))
                                        (nrepl-dict "octocat.math-test"
                                                    (list (nrepl-dict "context"
                                                                      (list "about math operations" "takes a number x and computes 2^x")
+                                                                     "expected" "8\n"
+                                                                     "actual" "9\n"
                                                                      "file" "/home/john-doe/projects/octocat/test/octocat/math_test.clj"
                                                                      "index" 0
                                                                      "line" 8
                                                                      "ns" "octocat.math-test"
-                                                                     "type" "pass")))
+                                                                     "type" "fail")))
                                        "summary"
-                                       (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 0 "ns" 1 "pass" 1 "to-do" 0))))
+                                       (nrepl-dict "check" 1 "error" 0 "fact" 1 "fail" 1 "finished-in" "2 milliseconds" "ns" 1 "pass" 1 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
            (emidje-tests-with-temp-buffer "(ns octocat.math-test)
 
@@ -368,14 +411,35 @@ takes a number x and returns its square root"))))
 
           (it "shows a message in the echo area by summarizing the test results"
               (expect (emidje-tests-last-displayed-message) :to-equal
-                      "Ran 1 checks in 1 facts. 0 failures, 0 errors."))
+                      "Ran 1 checks in 1 facts (2 milliseconds). 1 failures, 0 errors."))
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :test-at-point)
               (expect emidje-tests-sent-request :to-have-same-items-as `(ns "octocat.math-test"
                                                                             source "(fact \"takes a number x and returns 2^x\"
 (math/pow2 3) => 8)"
-                                                                            line 3))))
+                                                                            line 3)))
+
+          (it "shows a report buffer by displaying test results and summary"
+              (expect (emidje-tests-report-content) :to-equal
+                      "Test report
+
+** Test summary
+Finished in 2 milliseconds
+Ran 1 checks in 1 facts
+1 failures
+
+** Results
+
+octocat.math-test
+1 non-passing tests:
+
+Fail in about math operations
+takes a number x and computes 2^x
+
+expected: 8
+
+  actual: 9")))
 
 (describe "When I call `emidje-run-all-tests'"
           (before-each
@@ -393,7 +457,7 @@ takes a number x and returns its square root"))))
                                                                      "message" nil
                                                                      "ns" "octocat.math-test"
                                                                      "type" "fail"))
-                                                   "octocat.colors"
+                                                   "octocat.colors-test"
                                                    (list (nrepl-dict "actual" ":orange\n"
                                                                      "context"
                                                                      (list "about mixing colors" "blue + yellow produces green")
@@ -405,13 +469,10 @@ takes a number x and returns its square root"))))
                                                                      "ns" "octocat.colors-test"
                                                                      "type" "fail")))
                                        "summary"
-                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
+                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "finished-in" "3 seconds" "ns" 2 "pass" 0 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
            (spy-on 'emidje-select-test-path)
            (emidje-run-all-tests))
-
-          (it "doesn't call `emidje-select-test-path'"
-              (expect 'emidje-select-test-path ) :not :to-have-been-called)
 
           (it "calls `emidje-send-request' with the correct arguments"
               (expect emidje-tests-op-alias :to-equal :project)
@@ -423,21 +484,22 @@ takes a number x and returns its square root"))))
 
           (it "shows a message in the echo area by displaying the test summary"
               (expect (emidje-tests-last-displayed-message)
-                      :to-equal "Ran 2 checks in 2 facts. 2 failures, 0 errors."))
+                      :to-equal "Ran 2 checks in 2 facts (3 seconds). 2 failures, 0 errors."))
 
           (it "shows a report buffer by displaying test results and summary"
               (expect (emidje-tests-report-content) :to-equal
-                      "Test Summary
+                      "Test report
 
-octocat.math-test
+** Checked namespaces (2)
+octocat.colors-test failed
+octocat.math-test   failed
 
-octocat.colors
-
-Checked 2 namespaces
+** Test summary
+Finished in 3 seconds
 Ran 2 checks in 2 facts
 2 failures
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -449,7 +511,7 @@ expected: 8
 
   actual: 9\t\s\s
 
-octocat.colors
+octocat.colors-test
 1 non-passing tests:
 
 Fail in about mixing colors
@@ -544,7 +606,7 @@ arguments"
                                                                      "ns" "octocat.colors-test"
                                                                      "type" "fail")))
                                        "summary"
-                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
+                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "finished-in" "3 seconds" "ns" 2 "pass" 0 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
            (setq emidje-run-all-tests-arguments `("test-paths=(test)" "ns-exclusions=(too-slow-test)"))
            (call-interactively #'emidje-run-all-tests))
@@ -573,7 +635,7 @@ arguments"
                                                                      "message" nil
                                                                      "ns" "octocat.math-test"
                                                                      "type" "fail"))
-                                                   "octocat.colors"
+                                                   "octocat.colors-test"
                                                    (list (nrepl-dict "actual" ":orange\n"
                                                                      "context"
                                                                      (list "about mixing colors" "blue + yellow produces green")
@@ -585,7 +647,7 @@ arguments"
                                                                      "ns" "octocat.colors-test"
                                                                      "type" "fail")))
                                        "summary"
-                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "ns" 2 "pass" 0 "to-do" 0))))
+                                       (nrepl-dict "check" 2 "error" 0 "fact" 2 "fail" 2 "finished-in" "3 seconds" "ns" 2 "pass" 0 "to-do" 0))))
              (spy-on 'emidje-send-request :and-call-fake (emidje-tests-fake-send-request-function response)))
            (emidje-re-run-non-passing-tests))
 
@@ -599,21 +661,18 @@ arguments"
 
           (it "shows a message in the echo area by displaying the test summary"
               (expect (emidje-tests-last-displayed-message)
-                      :to-equal "Ran 2 checks in 2 facts. 2 failures, 0 errors."))
+                      :to-equal "Ran 2 checks in 2 facts (3 seconds). 2 failures, 0 errors."))
 
           (it "shows a report buffer by displaying test results and summary"
               (expect (emidje-tests-report-content) :to-equal
-                      "Test Summary
+                      "Test report
 
-octocat.math-test
-
-octocat.colors
-
-Checked 2 namespaces
+** Test summary
+Finished in 3 seconds
 Ran 2 checks in 2 facts
 2 failures
 
-Results
+** Results
 
 octocat.math-test
 1 non-passing tests:
@@ -625,7 +684,7 @@ expected: 8
 
   actual: 9\t\s\s
 
-octocat.colors
+octocat.colors-test
 1 non-passing tests:
 
 Fail in about mixing colors
