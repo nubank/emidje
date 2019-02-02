@@ -590,9 +590,11 @@ popup to set supported options in a more convenient way."
   "Popup console for `emidje-run-all-tests' command."
   :switches '((?p "Enable profiling of tests and list slowest ones" "profile?"))
   :options '("Options for filtering tests"
-             (?e "Regexes to exclude namespaces" "ns-exclusions=" emidje-read-list-from-popup-option)
-             (?i "Regexes to include namespaces" "ns-inclusions=" emidje-read-list-from-popup-option)
-             (?t "Limit test paths" "test-paths="  emidje-select-test-path)
+             (?e "Exclude namespaces that match these regexes" "ns-exclusions=" emidje-read-list-from-popup-option)
+             (?i "Run only tests in namespaces that match these regexes" "ns-inclusions=" emidje-read-list-from-popup-option)
+             (?E "Exclude tests that have these keywords in their meta" "test-exclusions=" emidje-read-list-from-popup-option)
+             (?I "Run only tests that have these keywords in their meta" "test-inclusions=" emidje-read-list-from-popup-option)
+             (?t "List of directories containing tests" "test-paths="  emidje-select-test-path)
              "Options for profiling tests"
              (?s "Number of slowest tests" "slowest-tests="))
   :actions '((?R "Run tests" emidje-run-all-tests())))
