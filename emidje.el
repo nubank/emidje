@@ -841,7 +841,7 @@ is positive, and disable it otherwise.  If called from Lisp,
 enable the mode if ARG is omitted or nil.
 
 \\{emidje-commands-map}"
-  :lighter "emidje"
+  :lighter " emidje"
   :keymap emidje-commands-map)
 
 ;;;###autoload
