@@ -33,6 +33,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   related information are grouped in outline sections that may be expanded or
   collapsed.
 
+### Fixed
+- [#18](https://github.com/nubank/emidje/pull/18): avoid concatenating the minor
+  mode's title with other minor modes by adding a white space in the beginning
+  of the lighter.
+
 ## [1.1.0] - 2018-12-19
 
 ### Added
