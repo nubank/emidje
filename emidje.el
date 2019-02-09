@@ -210,11 +210,18 @@ Show warning messages on Cider's REPL when applicable."
 Their versions are %s and %s, respectively.
 Please, consider updating the midje-nrepl version in your profile.clj to %s or start the REPL via cider-jack-in." emidje-version midje-nrepl-version emidje-version)))))
 
+(defun emidje-inject-nrepl-middleware-p (&rest _)
+  "Return t if the nREPL middleware should be injected at Cider jack-in.
+Currently, this predicate returns the value of
+  `emidje-inject-nrepl-middleware-at-jack-in'.  For more details
+  about predicate functions called by Cider at jack-in, see
+  `cider-jack-in-lein-plugins'."
+  emidje-inject-nrepl-middleware-at-jack-in)
+
 (defun emidje-inject-nrepl-middleware ()
   "Inject `midje-nrepl' in the REPL started by `cider-jack-in'."
-  (when (and (boundp 'cider-jack-in-lein-plugins)
-             emidje-inject-nrepl-middleware-at-jack-in)
-    (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-version)) t)))
+  (when (boundp 'cider-jack-in-lein-plugins)
+    (add-to-list 'cider-jack-in-lein-plugins `("nubank/midje-nrepl" ,(emidje-version)  :predicate emidje-inject-nrepl-middleware-p) t)))
 
 ;;;###autoload
 (defun emidje-enable-nrepl-middleware ()
