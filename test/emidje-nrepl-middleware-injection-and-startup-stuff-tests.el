@@ -117,19 +117,29 @@ Please, consider updating the midje-nrepl version in your profile.clj to %s or s
               (emidje-enable-nrepl-middleware)
               (expect cider-connected-hook :to-contain #'emidje-check-nrepl-middleware-version))
 
+          (it "adds `midje-nrepl' to the list of Leiningen plugins injected by Cider at jack-in"
+              (spy-on 'emidje-version :and-return-value "1.0.1")
+              (emidje-enable-nrepl-middleware)
+              (expect cider-jack-in-lein-plugins :to-contain `("nubank/midje-nrepl" "1.0.1" :predicate emidje-inject-nrepl-middleware-p)))
+
           (describe "and `emidje-inject-nrepl-middleware-at-jack-in' is set to t"
                     (before-all
                      (setq-local emidje-inject-nrepl-middleware-at-jack-in t))
 
-                    (it "adds `midje-nrepl' to the list of Leiningen plugins injected by Cider at jack-in"
-                        (spy-on 'emidje-version :and-return-value "1.0.1")
+                    (it "the predicate function returns t"
                         (emidje-enable-nrepl-middleware)
-                        (expect cider-jack-in-lein-plugins :to-contain `("nubank/midje-nrepl" "1.0.1"))))
+                        (expect (thread-first cider-jack-in-lein-plugins
+                                  car
+                                  (plist-get :predicate)
+                                  (apply (list nil))) :to-be t)))
 
           (describe "and `emidje-inject-nrepl-middleware-at-jack-in' is set to nil"
                     (before-all
                      (setq-local emidje-inject-nrepl-middleware-at-jack-in nil))
 
-                    (it "doesn't add `midje-nrepl' to the list of Leiningen plugins injected by Cider at jack-in"
+                    (it "the predicate function returns nil"
                         (emidje-enable-nrepl-middleware)
-                        (expect cider-jack-in-lein-plugins :to-be nil))))
+                        (expect (thread-first cider-jack-in-lein-plugins
+                                  car
+                                  (plist-get :predicate)
+                                  (apply (list nil))) :to-be nil))))
